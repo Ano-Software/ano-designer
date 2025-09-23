@@ -1,0 +1,23 @@
+﻿# Node
+node_modules
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build
+.next
+.turbo
+dist
+build
+coverage
+
+# Editor
+.DS_Store
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Env
+.env*
+!.env.example

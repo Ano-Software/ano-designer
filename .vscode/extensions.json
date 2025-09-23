@@ -1,0 +1,25 @@
+﻿{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "editorconfig.editorconfig",
+    "usernamehw.errorlens",
+    "dsznajder.es7-react-js-snippets",
+    "bradlc.vscode-tailwindcss",
+    "stivo.tailwind-fold",
+    "naumovs.color-highlight",
+    "csstools.postcss",
+    "ms-vscode.remote-containers",
+    "formulahendry.auto-close-tag",
+    "formulahendry.auto-rename-tag",
+    "xabikos.JavaScriptSnippets",
+    "ms-azuretools.vscode-docker",
+    "mechatroner.rainbow-csv",
+    "humao.rest-client",
+    "rangav.vscode-thunder-client",
+    "supabase.vscode-supabase",
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+    "github.vscode-pull-request-github"
+  ]
+}
