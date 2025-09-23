@@ -1,0 +1,31 @@
+{
+  "name": "ano-designer",
+  "version": "1.0.0",
+  "description": "Concentrar aplicações e bibliotecas compartilhadas do projeto ano-designer em um único repositório gerenciável.",
+  "main": "test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky install",
+    "format": "prettier --write .",
+    "lint": "eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/franquiasao2-cmyk/ano-designer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/franquiasao2-cmyk/ano-designer/issues"
+  },
+  "homepage": "https://github.com/franquiasao2-cmyk/ano-designer#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "eslint": "^9.36.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^16.2.0",
+    "prettier": "^3.6.2"
+  }
+}
