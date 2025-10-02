@@ -1,0 +1,22 @@
+.header-hero {
+  --hh-from: #7c3aed;
+  --hh-to: #22c55e;
+  --hh-text: #fff;
+  background: linear-gradient(135deg, var(--hh-from), var(--hh-to));
+  color: var(--hh-text);
+}
+.header-hero .title {
+  font-size: clamp(28px, 5vw, 48px);
+  line-height: 1.1;
+}
+.header-hero .subtitle {
+  font-size: clamp(14px, 2.5vw, 20px);
+}
+.header-hero .photo {
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.35));
+}
+@media (min-width: 1024px) {
+  .header-hero {
+    padding-block: 64px;
+  }
+}
