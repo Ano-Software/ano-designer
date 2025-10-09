@@ -58,14 +58,14 @@ function SummarySection({ title, items }: { title: string; items: string[] }) {
 }
 
 function describeHero(hero: HeroSettings, baseTitle: string) {
-  const heading = hero.heading.trim() || baseTitle || "Sem titulo";
+  const heading = hero.heading.trim() || baseTitle || "Sem título";
   const parts: string[] = [`Titulo: ${heading}`];
   const headerHeight = Math.round(hero.headerHeight ?? 320);
   const gradientAngle = Math.round(hero.gradientAngle ?? 45);
   const hasSubheading = hero.subheading.trim().length > 0;
 
   if (hasSubheading) {
-    parts.push(`Subtitulo: ${hero.subheading.trim()}`);
+    parts.push(`Subtítulo: ${hero.subheading.trim()}`);
   }
 
   parts.push(`Altura: ${headerHeight}px`);
@@ -77,13 +77,13 @@ function describeHero(hero: HeroSettings, baseTitle: string) {
   }
 
   parts.push(`Alinhamento: ${hero.alignment}`);
-  parts.push(`Cor titulo: ${hero.titleColor}`);
+  parts.push(`Cor do título: ${hero.titleColor}`);
 
   if (hasSubheading) {
-    parts.push(`Cor subtitulo: ${hero.subtitleColor}`);
+    parts.push(`Cor do subtítulo: ${hero.subtitleColor}`);
   }
 
-  parts.push(`Fontes: titulo ${hero.titleFont}, subtitulo ${hero.subtitleFont}`);
+  parts.push(`Fontes: título ${hero.titleFont}, subtítulo ${hero.subtitleFont}`);
   parts.push(`Auto remover fundo: ${hero.autoRemoveBackground ? "sim" : "nao"}`);
   parts.push(`Otimizar imagem: ${hero.autoOptimizeImage ? "sim" : "nao"}`);
 
@@ -125,7 +125,7 @@ function describeButtons(buttons: ButtonCanvasItem[]) {
 
 function describeContent(draft: ProjectDraft) {
   const items: string[] = [];
-  items.push(`Titulo base: ${draft.base.title || "sem titulo"}`);
+  items.push(`Título base: ${draft.base.title || "sem título"}`);
   items.push(`Slug: ${draft.base.slug || "sem slug"}`);
   if (draft.content.clientName) {
     items.push(`Cliente: ${draft.content.clientName}`);

@@ -1,5 +1,5 @@
 ﻿import { createClient } from "@supabase/supabase-js";
-import { getServiceRole } from "@/lib/env";
+import { getServiceRole } from "@/lib/env-server";
 
 type AdminClientOptions = Parameters<typeof createClient>[2];
 

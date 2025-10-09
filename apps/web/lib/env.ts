@@ -6,15 +6,12 @@ type PublicSupabaseConfig = {
   supabaseKey: string;
 };
 
-type ServiceRole = {
-  supabaseUrl: string;
-  serviceRoleKey: string;
-};
+// Server-only types and functions are moved to lib/env-server.ts
 
 const optionalEnvKeys = [
   "NEXT_PUBLIC_SITE_URL",
-  "SUPABASE_SERVICE_ROLE",
   "API_ALLOWED_ORIGINS",
+  // Do NOT include server-only vars here to avoid client bundle exposure
 ] as const;
 type OptionalEnv = (typeof optionalEnvKeys)[number];
 
@@ -81,7 +78,7 @@ function parseCommaSeparated(value: string | undefined) {
     .filter((item) => item.length > 0);
 }
 
-export type { PublicSupabaseConfig, ServiceRole };
+export type { PublicSupabaseConfig };
 
 export function getPublicSupabaseConfig(): PublicSupabaseConfig | null {
   const supabaseUrl = readEnv("NEXT_PUBLIC_SUPABASE_URL");
@@ -108,15 +105,7 @@ export function getPublicSupabaseConfig(): PublicSupabaseConfig | null {
   };
 }
 
-export function getServiceRole(): ServiceRole {
-  const supabaseUrl = ensureEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const serviceRoleKey = ensureEnv("SUPABASE_SERVICE_ROLE");
-
-  return {
-    supabaseUrl,
-    serviceRoleKey,
-  };
-}
+// getServiceRole moved to lib/env-server.ts to prevent client bundle leakage
 
 export function getApiAllowedOrigins(): string[] {
   const fromEnv = parseCommaSeparated(readEnv("API_ALLOWED_ORIGINS"));

@@ -1,10 +1,8 @@
 "use client";
-
 import { ChangeEvent, useMemo, useRef, useState } from "react";
 import Button from "@/components/Button";
 import { cn } from "@/lib/cn";
 import type { HeroImageAlignment, HeroSettings } from "./types";
-
 type TopoMessages = {
   tabTitle: string;
   tabDescription: string;
@@ -43,7 +41,6 @@ type TopoMessages = {
   statusError: string;
   invalidFile: string;
 };
-
 type TopoTabProps = {
   value: HeroSettings;
   onChange: (value: HeroSettings) => void;
@@ -51,19 +48,16 @@ type TopoTabProps = {
   removingBackground?: boolean;
   messages?: Partial<TopoMessages>;
 };
-
 type FundoControlsProps = {
   value: HeroSettings;
   onChange: (patch: Partial<HeroSettings>) => void;
   messages: TopoMessages;
 };
-
 type TituloSubtituloControlsProps = {
   value: HeroSettings;
   onChange: (patch: Partial<HeroSettings>) => void;
   messages: TopoMessages;
 };
-
 type HeaderImageControlsProps = {
   value: HeroSettings;
   onFileSelected: (file: File) => void;
@@ -76,50 +70,35 @@ type HeaderImageControlsProps = {
   statusMessage: { type: "idle" | "info" | "success" | "error"; text: string | null };
   messages: TopoMessages;
 };
-
-type AlignmentOption = {
-  id: HeroSettings["alignment"];
-  label: string;
-  glyph: string;
-};
-
-type ImageAlignmentOption = {
-  id: HeroImageAlignment;
-  label: string;
-};
-
-type StatusState = {
-  type: "idle" | "info" | "success" | "error";
-  text: string | null;
-};
-
+type AlignmentOption = { id: HeroSettings["alignment"]; label: string; glyph: string };
+type ImageAlignmentOption = { id: HeroImageAlignment; label: string };
+type StatusState = { type: "idle" | "info" | "success" | "error"; text: string | null };
 const HEADER_HEIGHT_RANGE = { min: 150, max: 420, default: 320 } as const;
 const TITLE_SIZE = { min: 24, max: 72, default: 40 } as const;
 const SUBTITLE_SIZE = { min: 14, max: 48, default: 18 } as const;
-
 const defaultMessages: TopoMessages = {
   tabTitle: "Topo",
-  tabDescription: "Configure altura, fundo, textos e imagem do cabecalho com previsao ao vivo.",
-  previewLabel: "Previa do cabecalho",
-  heightLabel: "Altura do cabecalho",
+  tabDescription: "Configure altura, fundo, textos e imagem do cabeçalho com previsão ao vivo.",
+  previewLabel: "Prévia do cabeçalho",
+  heightLabel: "Altura do cabeçalho",
   heightValue: "Altura atual: {value}px",
   heightHelp: "Ajuste apenas a borda inferior. O topo permanece fixo.",
-  backgroundSolid: "Cor solida",
+  backgroundSolid: "Cor sólida",
   backgroundGradient: "Gradiente",
   gradientFrom: "Cor inicial",
   gradientTo: "Cor final",
-  gradientAngle: "Angulo",
-  titleLabel: "Titulo",
+  gradientAngle: "Ângulo",
+  titleLabel: "Título",
   titlePlaceholder: "Nome forte para o destaque",
-  subtitleLabel: "Subtitulo",
+  subtitleLabel: "Subtítulo",
   subtitlePlaceholder: "Mensagem breve de apoio",
-  titleColorLabel: "Cor do titulo",
-  subtitleColorLabel: "Cor do subtitulo",
+  titleColorLabel: "Cor do título",
+  subtitleColorLabel: "Cor do subtítulo",
   alignmentLabel: "Alinhamento",
   alignmentLeft: "Esquerda",
   alignmentCenter: "Centro",
   alignmentRight: "Direita",
-  imageLabel: "Foto de cabecalho",
+  imageLabel: "Foto de cabeçalho",
   imageUploadHint: "PNG, JPG ou WebP. A imagem ocupa 100% da altura configurada.",
   removeImage: "Remover imagem",
   imageAlignmentLabel: "Alinhamento da foto",
@@ -132,26 +111,22 @@ const defaultMessages: TopoMessages = {
   statusReading: "Processando upload...",
   statusRemoving: "Removendo fundo no servidor...",
   statusSuccess: "Imagem pronta!",
-  statusError: "Nao foi possivel processar a imagem.",
-  invalidFile: "Selecione um arquivo de imagem valido.",
+  statusError: "Não foi possível processar a imagem.",
+  invalidFile: "Selecione um arquivo de imagem válido.",
 };
-
 const alignmentGlyphs: Record<HeroSettings["alignment"], string> = {
   left: "<",
   center: "|",
   right: ">",
 };
-
 const imageObjectPosition: Record<HeroImageAlignment, string> = {
   left: "left center",
   center: "center center",
   right: "right center",
 };
-
 function formatWithValue(template: string, value: number) {
   return template.replace("{value}", `${value}`);
 }
-
 function clamp(value: number, min: number, max: number, fallback: number) {
   if (!Number.isFinite(value)) {
     return fallback;
@@ -164,7 +139,6 @@ function clamp(value: number, min: number, max: number, fallback: number) {
   }
   return value;
 }
-
 function normalizeAngle(value: number) {
   if (!Number.isFinite(value)) {
     return 45;
@@ -177,18 +151,13 @@ function normalizeAngle(value: number) {
   }
   return Math.round(value);
 }
-
 function gradientPreviewStyle(value: HeroSettings) {
   if (value.backgroundKind === "color") {
     return { background: value.backgroundColor };
   }
-
   const angle = Number.isFinite(value.gradientAngle) ? value.gradientAngle : 45;
-  return {
-    background: `linear-gradient(${angle}deg, ${value.gradientFrom}, ${value.gradientTo})`,
-  };
+  return { background: `linear-gradient(${angle}deg, ${value.gradientFrom}, ${value.gradientTo})` };
 }
-
 function fontClass(font: HeroSettings["titleFont"]) {
   switch (font) {
     case "serif":
@@ -201,7 +170,6 @@ function fontClass(font: HeroSettings["titleFont"]) {
       return "font-sans";
   }
 }
-
 function readFileAsDataUrl(file: File, onProgress?: (progress: number) => void) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -226,7 +194,6 @@ function readFileAsDataUrl(file: File, onProgress?: (progress: number) => void) 
     reader.readAsDataURL(file);
   });
 }
-
 function PreviewPane({ value, messages }: { value: HeroSettings; messages: TopoMessages }) {
   const previewStyle = useMemo(() => gradientPreviewStyle(value), [value]);
   const height = clamp(
@@ -242,21 +209,23 @@ function PreviewPane({ value, messages }: { value: HeroSettings; messages: TopoM
     SUBTITLE_SIZE.max,
     SUBTITLE_SIZE.default
   );
-
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium text-white">{messages.previewLabel}</p>
+      {" "}
+      <p className="text-sm font-medium text-white">{messages.previewLabel}</p>{" "}
       <div className="overflow-hidden rounded-xl border border-white/10 bg-black/80">
+        {" "}
         <div className="relative w-full" style={{ minHeight: `${height}px`, ...previewStyle }}>
+          {" "}
           {value.coverImage ? (
             <img
               src={value.coverImage.assetUrl ?? value.coverImage.dataUrl}
-              alt="Pre-visualizacao do cabecalho"
+              alt="Pr�-visualiza��o do cabe�alho"
               className="absolute inset-0 h-full w-full object-cover"
               style={{ objectPosition: imageObjectPosition[value.coverImagePosition] }}
             />
-          ) : null}
-          <div className="absolute inset-0 bg-black/30" aria-hidden />
+          ) : null}{" "}
+          <div className="absolute inset-0 bg-black/30" aria-hidden />{" "}
           <div
             className={cn(
               "relative flex h-full w-full flex-col justify-end gap-3 p-6",
@@ -266,13 +235,16 @@ function PreviewPane({ value, messages }: { value: HeroSettings; messages: TopoM
             )}
             style={{ color: value.titleColor }}
           >
+            {" "}
             <div className="space-y-2">
+              {" "}
               <h3
                 className={cn("font-semibold", fontClass(value.titleFont))}
                 style={{ fontSize: `${titleSize}px`, lineHeight: 1.1, color: value.titleColor }}
               >
-                {value.heading || "Titulo de exemplo"}
-              </h3>
+                {" "}
+                {value.heading || "Titulo de exemplo"}{" "}
+              </h3>{" "}
               {value.subheading ? (
                 <p
                   className={cn("text-white/85", fontClass(value.subtitleFont))}
@@ -282,18 +254,18 @@ function PreviewPane({ value, messages }: { value: HeroSettings; messages: TopoM
                     color: value.subtitleColor,
                   }}
                 >
-                  {value.subheading}
+                  {" "}
+                  {value.subheading}{" "}
                 </p>
-              ) : null}
-            </div>
-          </div>
-        </div>
-        <p className="px-4 pb-4 pt-2 text-xs text-white/60">{messages.heightHelp}</p>
-      </div>
+              ) : null}{" "}
+            </div>{" "}
+          </div>{" "}
+        </div>{" "}
+        <p className="px-4 pb-4 pt-2 text-xs text-white/60">{messages.heightHelp}</p>{" "}
+      </div>{" "}
     </div>
   );
 }
-
 function FundoControls({ value, onChange, messages }: FundoControlsProps) {
   const height = clamp(
     value.headerHeight,
@@ -302,12 +274,14 @@ function FundoControls({ value, onChange, messages }: FundoControlsProps) {
     HEADER_HEIGHT_RANGE.default
   );
   const angle = normalizeAngle(value.gradientAngle);
-
   return (
     <section className="space-y-4">
+      {" "}
       <div className="space-y-2">
+        {" "}
         <label className="flex flex-col gap-2 text-sm text-white">
-          <span className="font-medium">{messages.heightLabel}</span>
+          {" "}
+          <span className="font-medium">{messages.heightLabel}</span>{" "}
           <input
             type="range"
             min={HEADER_HEIGHT_RANGE.min}
@@ -323,37 +297,40 @@ function FundoControls({ value, onChange, messages }: FundoControlsProps) {
             aria-valuemin={HEADER_HEIGHT_RANGE.min}
             aria-valuemax={HEADER_HEIGHT_RANGE.max}
             aria-valuenow={height}
-          />
+          />{" "}
           <span className="text-xs text-white/60">
-            {formatWithValue(messages.heightValue, height)}
-          </span>
-        </label>
-      </div>
-
+            {" "}
+            {formatWithValue(messages.heightValue, height)}{" "}
+          </span>{" "}
+        </label>{" "}
+      </div>{" "}
       <div className="space-y-3">
+        {" "}
         <div className="flex items-center gap-4">
+          {" "}
           <label className="flex items-center gap-2 text-sm text-white">
+            {" "}
             <input
               type="radio"
               name="hero-background"
               checked={value.backgroundKind === "color"}
               onChange={() => onChange({ backgroundKind: "color" })}
               className="h-4 w-4"
-            />
-            {messages.backgroundSolid}
-          </label>
+            />{" "}
+            {messages.backgroundSolid}{" "}
+          </label>{" "}
           <label className="flex items-center gap-2 text-sm text-white">
+            {" "}
             <input
               type="radio"
               name="hero-background"
               checked={value.backgroundKind === "gradient"}
               onChange={() => onChange({ backgroundKind: "gradient" })}
               className="h-4 w-4"
-            />
-            {messages.backgroundGradient}
-          </label>
-        </div>
-
+            />{" "}
+            {messages.backgroundGradient}{" "}
+          </label>{" "}
+        </div>{" "}
         {value.backgroundKind === "color" ? (
           <input
             type="color"
@@ -364,30 +341,36 @@ function FundoControls({ value, onChange, messages }: FundoControlsProps) {
           />
         ) : (
           <div className="space-y-4">
+            {" "}
             <div className="grid gap-4 md:grid-cols-2">
+              {" "}
               <label className="flex flex-col gap-2 text-sm text-white">
-                <span>{messages.gradientFrom}</span>
+                {" "}
+                <span>{messages.gradientFrom}</span>{" "}
                 <input
                   type="color"
                   value={value.gradientFrom}
                   onChange={(event) => onChange({ gradientFrom: event.target.value })}
                   className="h-12 w-full cursor-pointer rounded-xl border border-white/10 bg-white/5"
-                />
-              </label>
+                />{" "}
+              </label>{" "}
               <label className="flex flex-col gap-2 text-sm text-white">
-                <span>{messages.gradientTo}</span>
+                {" "}
+                <span>{messages.gradientTo}</span>{" "}
                 <input
                   type="color"
                   value={value.gradientTo}
                   onChange={(event) => onChange({ gradientTo: event.target.value })}
                   className="h-12 w-full cursor-pointer rounded-xl border border-white/10 bg-white/5"
-                />
-              </label>
-            </div>
+                />{" "}
+              </label>{" "}
+            </div>{" "}
             <label className="flex flex-col gap-2 text-sm text-white">
+              {" "}
               <span>
-                {messages.gradientAngle} {angle}deg
-              </span>
+                {" "}
+                {messages.gradientAngle} {angle}deg{" "}
+              </span>{" "}
               <input
                 type="range"
                 min={0}
@@ -397,15 +380,14 @@ function FundoControls({ value, onChange, messages }: FundoControlsProps) {
                 onChange={(event) =>
                   onChange({ gradientAngle: Number.parseInt(event.target.value, 10) })
                 }
-              />
-            </label>
+              />{" "}
+            </label>{" "}
           </div>
-        )}
-      </div>
+        )}{" "}
+      </div>{" "}
     </section>
   );
 }
-
 function TituloSubtituloControls({ value, onChange, messages }: TituloSubtituloControlsProps) {
   const titleSize = clamp(value.titleSize, TITLE_SIZE.min, TITLE_SIZE.max, TITLE_SIZE.default);
   const subtitleSize = clamp(
@@ -414,62 +396,67 @@ function TituloSubtituloControls({ value, onChange, messages }: TituloSubtituloC
     SUBTITLE_SIZE.max,
     SUBTITLE_SIZE.default
   );
-
   const alignmentOptions: AlignmentOption[] = [
     { id: "left", label: messages.alignmentLeft, glyph: alignmentGlyphs.left },
     { id: "center", label: messages.alignmentCenter, glyph: alignmentGlyphs.center },
     { id: "right", label: messages.alignmentRight, glyph: alignmentGlyphs.right },
   ];
-
   return (
     <section className="space-y-4">
+      {" "}
       <div className="grid gap-4 md:grid-cols-2">
+        {" "}
         <label className="space-y-2">
-          <span className="text-sm font-medium text-white">{messages.titleLabel}</span>
+          {" "}
+          <span className="text-sm font-medium text-white">{messages.titleLabel}</span>{" "}
           <input
             type="text"
             value={value.heading}
             onChange={(event) => onChange({ heading: event.target.value })}
             placeholder={messages.titlePlaceholder}
             className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
-          />
-        </label>
+          />{" "}
+        </label>{" "}
         <label className="space-y-2">
-          <span className="text-sm font-medium text-white">{messages.subtitleLabel}</span>
+          {" "}
+          <span className="text-sm font-medium text-white">{messages.subtitleLabel}</span>{" "}
           <input
             type="text"
             value={value.subheading}
             onChange={(event) => onChange({ subheading: event.target.value })}
             placeholder={messages.subtitlePlaceholder}
             className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
-          />
-        </label>
-      </div>
-
+          />{" "}
+        </label>{" "}
+      </div>{" "}
       <div className="grid gap-4 md:grid-cols-2">
+        {" "}
         <label className="space-y-2">
-          <span className="text-sm font-medium text-white">{messages.titleColorLabel}</span>
+          {" "}
+          <span className="text-sm font-medium text-white">{messages.titleColorLabel}</span>{" "}
           <input
             type="color"
             value={value.titleColor}
             onChange={(event) => onChange({ titleColor: event.target.value })}
             className="h-12 w-full cursor-pointer rounded-xl border border-white/10 bg-white/5"
-          />
-        </label>
+          />{" "}
+        </label>{" "}
         <label className="space-y-2">
-          <span className="text-sm font-medium text-white">{messages.subtitleColorLabel}</span>
+          {" "}
+          <span className="text-sm font-medium text-white">{messages.subtitleColorLabel}</span>{" "}
           <input
             type="color"
             value={value.subtitleColor}
             onChange={(event) => onChange({ subtitleColor: event.target.value })}
             className="h-12 w-full cursor-pointer rounded-xl border border-white/10 bg-white/5"
-          />
-        </label>
-      </div>
-
+          />{" "}
+        </label>{" "}
+      </div>{" "}
       <div className="space-y-2">
-        <span className="text-sm font-medium text-white">{messages.alignmentLabel}</span>
+        {" "}
+        <span className="text-sm font-medium text-white">{messages.alignmentLabel}</span>{" "}
         <div className="flex gap-2">
+          {" "}
           {alignmentOptions.map((option) => (
             <button
               key={option.id}
@@ -482,18 +469,21 @@ function TituloSubtituloControls({ value, onChange, messages }: TituloSubtituloC
                   : "border-white/10 bg-white/5 text-white/70 hover:border-white/20"
               )}
             >
+              {" "}
               <span aria-hidden className="text-lg leading-none">
-                {option.glyph}
-              </span>
-              <span className="sr-only">{option.label}</span>
+                {" "}
+                {option.glyph}{" "}
+              </span>{" "}
+              <span className="sr-only">{option.label}</span>{" "}
             </button>
-          ))}
-        </div>
-      </div>
-
+          ))}{" "}
+        </div>{" "}
+      </div>{" "}
       <div className="grid gap-4 md:grid-cols-2">
+        {" "}
         <label className="flex flex-col gap-2 text-sm text-white">
-          <span>Tamanho do titulo ({titleSize}px)</span>
+          {" "}
+          <span>Tamanho do titulo ({titleSize}px)</span>{" "}
           <input
             type="range"
             min={TITLE_SIZE.min}
@@ -501,10 +491,11 @@ function TituloSubtituloControls({ value, onChange, messages }: TituloSubtituloC
             step={1}
             value={titleSize}
             onChange={(event) => onChange({ titleSize: Number.parseInt(event.target.value, 10) })}
-          />
-        </label>
+          />{" "}
+        </label>{" "}
         <label className="flex flex-col gap-2 text-sm text-white">
-          <span>Tamanho do subtitulo ({subtitleSize}px)</span>
+          {" "}
+          <span>Tamanho do subtitulo ({subtitleSize}px)</span>{" "}
           <input
             type="range"
             min={SUBTITLE_SIZE.min}
@@ -514,13 +505,12 @@ function TituloSubtituloControls({ value, onChange, messages }: TituloSubtituloC
             onChange={(event) =>
               onChange({ subtitleSize: Number.parseInt(event.target.value, 10) })
             }
-          />
-        </label>
-      </div>
+          />{" "}
+        </label>{" "}
+      </div>{" "}
     </section>
   );
 }
-
 function HeaderImageControls({
   value,
   onFileSelected,
@@ -534,13 +524,11 @@ function HeaderImageControls({
   messages,
 }: HeaderImageControlsProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
   const imageAlignmentOptions: ImageAlignmentOption[] = [
     { id: "left", label: messages.imageAlignmentLeft },
     { id: "center", label: messages.imageAlignmentCenter },
     { id: "right", label: messages.imageAlignmentRight },
   ];
-
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -548,13 +536,15 @@ function HeaderImageControls({
       event.target.value = "";
     }
   };
-
   return (
     <section className="space-y-4">
+      {" "}
       <div className="space-y-2">
+        {" "}
         <label className="block text-sm font-medium text-white" htmlFor="hero-image-upload">
-          {messages.imageLabel}
-        </label>
+          {" "}
+          {messages.imageLabel}{" "}
+        </label>{" "}
         <input
           ref={fileInputRef}
           id="hero-image-upload"
@@ -562,12 +552,15 @@ function HeaderImageControls({
           accept="image/png,image/jpeg,image/webp"
           onChange={handleFileChange}
           className="block w-full text-sm text-white file:mr-4 file:rounded-full file:border-0 file:bg-white/20 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-white/30"
-        />
-        <p className="text-xs text-white/50">{messages.imageUploadHint}</p>
+        />{" "}
+        <p className="text-xs text-white/50">{messages.imageUploadHint}</p>{" "}
         <div className="space-y-2" aria-live="polite">
+          {" "}
           {uploadProgress !== null ? (
             <div className="space-y-1">
+              {" "}
               <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                {" "}
                 <div
                   className="h-full rounded-full bg-[#e2b23b]/80 transition-all"
                   style={{ width: `${Math.max(0, Math.min(uploadProgress, 100))}%` }}
@@ -575,11 +568,11 @@ function HeaderImageControls({
                   aria-valuenow={uploadProgress}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                />
-              </div>
-              <span className="text-xs text-white/60">{uploadProgress}%</span>
+                />{" "}
+              </div>{" "}
+              <span className="text-xs text-white/60">{uploadProgress}%</span>{" "}
             </div>
-          ) : null}
+          ) : null}{" "}
           {statusMessage.text ? (
             <p
               className={cn(
@@ -589,26 +582,30 @@ function HeaderImageControls({
                 statusMessage.type === "info" && "text-white/70"
               )}
             >
-              {statusMessage.text}
+              {" "}
+              {statusMessage.text}{" "}
             </p>
           ) : (
             <p className="text-xs text-white/40">{messages.statusIdle}</p>
-          )}
-        </div>
+          )}{" "}
+        </div>{" "}
         <div className="flex flex-wrap items-center gap-2">
+          {" "}
           <Button
             type="button"
             variant="secondary"
             onClick={onRemoveImage}
             disabled={!value.coverImage}
           >
-            {messages.removeImage}
-          </Button>
-        </div>
-      </div>
-
+            {" "}
+            {messages.removeImage}{" "}
+          </Button>{" "}
+        </div>{" "}
+      </div>{" "}
       <div className="space-y-3">
+        {" "}
         <div className="grid gap-2 md:grid-cols-2">
+          {" "}
           <button
             type="button"
             role="switch"
@@ -623,9 +620,10 @@ function HeaderImageControls({
             )}
             disabled={removingBackground}
           >
-            <span>{messages.toggleRemoveBackground}</span>
-            <ToggleThumb checked={value.autoRemoveBackground} />
-          </button>
+            {" "}
+            <span>{messages.toggleRemoveBackground}</span>{" "}
+            <ToggleThumb checked={value.autoRemoveBackground} />{" "}
+          </button>{" "}
           <button
             type="button"
             role="switch"
@@ -638,15 +636,17 @@ function HeaderImageControls({
                 : "border-white/10 bg-white/5 text-white/70 hover:border-white/20"
             )}
           >
-            <span>{messages.toggleOptimizeImage}</span>
-            <ToggleThumb checked={value.autoOptimizeImage} />
-          </button>
-        </div>
-      </div>
-
+            {" "}
+            <span>{messages.toggleOptimizeImage}</span>{" "}
+            <ToggleThumb checked={value.autoOptimizeImage} />{" "}
+          </button>{" "}
+        </div>{" "}
+      </div>{" "}
       <fieldset className="space-y-2">
-        <span className="text-sm font-medium text-white">{messages.imageAlignmentLabel}</span>
+        {" "}
+        <span className="text-sm font-medium text-white">{messages.imageAlignmentLabel}</span>{" "}
         <div className="flex gap-2">
+          {" "}
           {imageAlignmentOptions.map((option) => (
             <button
               key={option.id}
@@ -659,15 +659,15 @@ function HeaderImageControls({
                   : "border-white/10 bg-white/5 text-white/70 hover:border-white/20"
               )}
             >
-              {option.label}
+              {" "}
+              {option.label}{" "}
             </button>
-          ))}
-        </div>
-      </fieldset>
+          ))}{" "}
+        </div>{" "}
+      </fieldset>{" "}
     </section>
   );
 }
-
 function ToggleThumb({ checked }: { checked: boolean }) {
   return (
     <span
@@ -676,16 +676,16 @@ function ToggleThumb({ checked }: { checked: boolean }) {
         checked && "bg-[#e2b23b]/40"
       )}
     >
+      {" "}
       <span
         className={cn(
           "h-4 w-4 rounded-full bg-white transition-transform duration-200",
           checked ? "translate-x-5" : "translate-x-1"
         )}
-      />
+      />{" "}
     </span>
   );
 }
-
 export function TopoTab({
   value,
   onChange,
@@ -697,30 +697,24 @@ export function TopoTab({
   const [statusMessage, setStatusMessage] = useState<StatusState>({ type: "idle", text: null });
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
-
   const update = (patch: Partial<HeroSettings>) => {
     onChange({ ...value, ...patch });
   };
-
   const handleImageUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       setLocalError(copy.invalidFile);
       setStatusMessage({ type: "error", text: copy.invalidFile });
       return;
     }
-
     setLocalError(null);
     setStatusMessage({ type: "info", text: copy.statusReading });
     setUploadProgress(5);
-
     try {
       const dataUrl = await readFileAsDataUrl(file, (progress) => {
         setUploadProgress(Math.min(40, Math.max(progress / 2, 5)));
       });
-
       let processedUrl = dataUrl;
       let backgroundRemoved = false;
-
       if (value.autoRemoveBackground && onRequestRemoveBackground) {
         setStatusMessage({ type: "info", text: copy.statusRemoving });
         setUploadProgress((current) => (current === null ? 60 : Math.max(current, 60)));
@@ -728,7 +722,6 @@ export function TopoTab({
         backgroundRemoved = true;
         setUploadProgress((current) => (current === null ? 85 : Math.max(current, 85)));
       }
-
       update({
         coverImage: {
           dataUrl: processedUrl,
@@ -737,7 +730,6 @@ export function TopoTab({
           assetUrl: processedUrl,
         },
       });
-
       setStatusMessage({ type: "success", text: copy.statusSuccess });
       setUploadProgress(100);
     } catch (error) {
@@ -750,23 +742,24 @@ export function TopoTab({
       setTimeout(() => setUploadProgress(null), 1200);
     }
   };
-
   const handleRemoveImage = () => {
     update({ coverImage: null });
     setStatusMessage({ type: "idle", text: null });
     setLocalError(null);
     setUploadProgress(null);
   };
-
   return (
     <section className="space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_20px_50px_rgba(13,32,24,0.35)] backdrop-blur">
+      {" "}
       <header className="space-y-1">
-        <h2 className="text-lg font-semibold text-white">{copy.tabTitle}</h2>
-        <p className="text-sm text-white/70">{copy.tabDescription}</p>
-      </header>
-
+        {" "}
+        <h2 className="text-lg font-semibold text-white">{copy.tabTitle}</h2>{" "}
+        <p className="text-sm text-white/70">{copy.tabDescription}</p>{" "}
+      </header>{" "}
       <div className="grid gap-6 lg:grid-cols-[280px_1fr] lg:gap-8">
+        {" "}
         <div className="space-y-5">
+          {" "}
           <HeaderImageControls
             value={value}
             onFileSelected={handleImageUpload}
@@ -778,27 +771,22 @@ export function TopoTab({
             uploadProgress={uploadProgress}
             statusMessage={statusMessage}
             messages={copy}
-          />
-          {localError ? <p className="text-sm text-red-300">{localError}</p> : null}
-        </div>
-
+          />{" "}
+          {localError ? <p className="text-sm text-red-300">{localError}</p> : null}{" "}
+        </div>{" "}
         <div className="space-y-6">
-          <TituloSubtituloControls value={value} onChange={update} messages={copy} />
-          <FundoControls value={value} onChange={update} messages={copy} />
-        </div>
-      </div>
+          {" "}
+          <TituloSubtituloControls value={value} onChange={update} messages={copy} />{" "}
+          <FundoControls value={value} onChange={update} messages={copy} />{" "}
+        </div>{" "}
+      </div>{" "}
     </section>
   );
 }
-
 export function HeaderEditor(props: TopoTabProps) {
   return <TopoTab {...props} />;
 }
-
 export const headerTypographyPreviewClass = (
   heading: HeroSettings["titleFont"],
   subheading: HeroSettings["subtitleFont"]
-) => ({
-  heading: fontClass(heading),
-  subheading: fontClass(subheading),
-});
+) => ({ heading: fontClass(heading), subheading: fontClass(subheading) });

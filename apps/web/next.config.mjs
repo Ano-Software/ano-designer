@@ -7,6 +7,14 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: "/",
+        destination: "/login",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

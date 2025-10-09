@@ -17,7 +17,7 @@ const resetSchema = z.object({
   email: z
     .string({ required_error: "Informe o e-mail cadastrado." })
     .min(1, "Informe o e-mail cadastrado.")
-    .email("Informe um e-mail valido."),
+    .email("Informe um e-mail válido."),
 });
 
 type ResetValues = z.infer<typeof resetSchema>;
@@ -76,7 +76,7 @@ export default function ResetPage() {
       }
 
       setSuccess(
-        "Se encontrarmos seu cadastro, enviaremos um link de redefinicao por e-mail nos proximos minutos."
+        "Se encontrarmos seu cadastro, enviaremos um link de redefinição por e-mail nos próximos minutos."
       );
       setFieldErrors({});
       setValues({ email: "" });
@@ -84,8 +84,8 @@ export default function ResetPage() {
       const message =
         caught instanceof Error
           ? caught.message
-          : "Nao foi possivel enviar o e-mail de redefinicao agora.";
-      setError(message || "Nao foi possivel enviar o e-mail de redefinicao agora.");
+          : "Não foi possível enviar o e-mail de redefinição agora.";
+      setError(message || "Não foi possível enviar o e-mail de redefinição agora.");
     } finally {
       setIsSubmitting(false);
     }
@@ -94,8 +94,8 @@ export default function ResetPage() {
   return (
     <AuthLayout
       title="Redefina sua senha"
-      description="Informe o e-mail associado a sua conta para receber um link seguro de redefinicao."
-      highlight="Recuperacao"
+      description="Informe o e-mail associado à sua conta para receber um link seguro de redefinição."
+      highlight="Recuperação"
       footer={
         <>
           <p>
@@ -105,7 +105,7 @@ export default function ResetPage() {
             </Link>
           </p>
           <p>
-            Ainda nao possui conta?{" "}
+            Ainda não possui conta?{" "}
             <Link className="font-semibold text-[#e2b23b] hover:underline" href="/signup">
               Criar conta
             </Link>
@@ -143,7 +143,7 @@ export default function ResetPage() {
           {success ? <FormAlert variant="success">{success}</FormAlert> : null}
 
           <Button type="submit" isLoading={isSubmitting} disabled={supabaseUnavailable}>
-            Enviar instrucoes
+            Enviar instruções
           </Button>
         </form>
       </div>

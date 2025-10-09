@@ -75,7 +75,7 @@ function readFileAsDataUrl(file: File) {
     reader.onload = () => {
       const result = typeof reader.result === "string" ? reader.result : null;
       if (!result) {
-        reject(new Error("Arquivo invalido"));
+        reject(new Error("Arquivo inválido"));
         return;
       }
       resolve(result);
