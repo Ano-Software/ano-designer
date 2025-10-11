@@ -1,6 +1,8 @@
 "use client";
 
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Button from "@/components/Button";
+import { apiClient } from "@/lib/api-client";
 import type { ProjectDraft } from "./types";
 
 type ReviewPaneProps = {
@@ -59,7 +61,7 @@ export function ReviewPane({
   lastSavedAt,
 }: ReviewPaneProps) {
   // Link público: estado e validação
-  const [linkName, setLinkName] = useState<string>(() => draft.base.slug || "");
+  const [linkName, setLinkName] = useState<string>(() => draft?.base?.slug ?? "");
   const [linkStatus, setLinkStatus] = useState<"idle" | "checking" | "available" | "unavailable">(
     "idle"
   );
@@ -108,8 +110,8 @@ export function ReviewPane({
   );
 
   useEffect(() => {
-    setLinkName(draft.base.slug || "");
-    if (draft.base.slug) triggerCheck(draft.base.slug);
+    setLinkName(draft?.base?.slug ?? "");
+    if (draft?.base?.slug) triggerCheck(draft.base.slug);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const planLabel = plan?.planName ?? plan?.planId ?? "Plano desconhecido";
@@ -120,8 +122,8 @@ export function ReviewPane({
     : "Plano nao carregado";
   const publishCtaLabel = hasPublishAccess ? "Publicar" : "Contratar plano";
   const baseValid = (() => {
-    const title = draft.base.title.trim();
-    const slug = draft.base.slug.trim();
+    const title = draft?.base?.title?.trim?.() ?? "";
+    const slug = draft?.base?.slug?.trim?.() ?? "";
     return title.length >= 3 && title.length <= 120 && slug.length >= 3;
   })();
 
