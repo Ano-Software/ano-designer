@@ -92,19 +92,19 @@ const SUBTITLE_SIZE = { min: 14, max: 48, default: 18 } as const;
 
 const defaultMessages: TopoMessages = {
   tabTitle: "Topo",
-  tabDescription: "Configure altura, fundo, textos e imagem do cabecalho com previsao ao vivo.",
-  previewLabel: "Previa do cabecalho",
-  heightLabel: "Altura do cabecalho",
+  tabDescription: "Configure altura, fundo, textos e imagem do cabeçalho com previsão ao vivo.",
+  previewLabel: "Prévia do cabeçalho",
+  heightLabel: "Altura do cabeçalho",
   heightValue: "Altura atual: {value}px",
   heightHelp: "Ajuste apenas a borda inferior. O topo permanece fixo.",
-  backgroundSolid: "Cor solida",
+  backgroundSolid: "Cor sólida",
   backgroundGradient: "Gradiente",
   gradientFrom: "Cor inicial",
   gradientTo: "Cor final",
-  gradientAngle: "Angulo",
-  titleLabel: "Titulo",
+  gradientAngle: "Ângulo",
+  titleLabel: "Título",
   titlePlaceholder: "Nome forte para o destaque",
-  subtitleLabel: "Subtitulo",
+  subtitleLabel: "Subtítulo",
   subtitlePlaceholder: "Mensagem breve de apoio",
   titleColorLabel: "Cor do titulo",
   subtitleColorLabel: "Cor do subtitulo",
@@ -112,7 +112,7 @@ const defaultMessages: TopoMessages = {
   alignmentLeft: "Esquerda",
   alignmentCenter: "Centro",
   alignmentRight: "Direita",
-  imageLabel: "Foto de cabecalho",
+  imageLabel: "Foto de cabeçalho",
   imageUploadHint: "PNG, JPG ou WebP. A imagem ocupa 100% da altura configurada.",
   removeImage: "Remover imagem",
   imageAlignmentLabel: "Alinhamento da foto",
@@ -125,8 +125,8 @@ const defaultMessages: TopoMessages = {
   statusReading: "Processando upload...",
   statusRemoving: "Removendo fundo no servidor...",
   statusSuccess: "Imagem pronta!",
-  statusError: "Nao foi possivel processar a imagem.",
-  invalidFile: "Selecione um arquivo de imagem valido.",
+  statusError: "Não foi possível processar a imagem.",
+  invalidFile: "Selecione um arquivo de imagem válido.",
 };
 
 const alignmentGlyphs: Record<HeroSettings["alignment"], string> = {
@@ -244,7 +244,7 @@ function PreviewPane({ value, messages }: { value: HeroSettings; messages: TopoM
           {value.coverImage ? (
             <img
               src={value.coverImage.assetUrl ?? value.coverImage.dataUrl}
-              alt="Pre-visualizacao do cabecalho"
+              alt="Pré-visualização do cabeçalho"
               className="absolute inset-0 h-full w-full object-cover"
               style={{ objectPosition: imageObjectPosition[value.coverImagePosition] }}
             />
@@ -264,7 +264,7 @@ function PreviewPane({ value, messages }: { value: HeroSettings; messages: TopoM
                 className={cn("font-semibold", fontClass(value.titleFont))}
                 style={{ fontSize: `${titleSize}px`, lineHeight: 1.1, color: value.titleColor }}
               >
-                {value.heading || "Titulo de exemplo"}
+                {value.heading || "Título de exemplo"}
               </h3>
               {value.subheading ? (
                 <p

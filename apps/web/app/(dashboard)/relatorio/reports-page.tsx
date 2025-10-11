@@ -184,7 +184,7 @@ export function ReportsPage() {
           const message =
             error instanceof ApiClientError
               ? error.message
-              : "Nao foi possivel carregar o relatorio.";
+              : "Não foi possível carregar o relatório.";
           setState((prev) => ({ data: prev.data, loading: false, error: message }));
         });
     },
@@ -262,7 +262,7 @@ export function ReportsPage() {
         const message =
           error instanceof ApiClientError
             ? error.message
-            : "Nao foi possivel exportar o relatorio.";
+            : "Não foi possível exportar o relatório.";
         setState((prev) => ({ ...prev, error: message }));
       } finally {
         setExporting(null);

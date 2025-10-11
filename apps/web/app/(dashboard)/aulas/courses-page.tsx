@@ -102,7 +102,7 @@ export function CoursesPage({ blocked, planExpiresAt }: CoursesPageProps) {
           </div>
         ) : videos.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-white/60">
-            Nenhum conteudo disponivel ainda.
+            Nenhum conteúdo disponível ainda.
           </div>
         ) : (
           <div className="space-y-4">
@@ -116,7 +116,7 @@ export function CoursesPage({ blocked, planExpiresAt }: CoursesPageProps) {
                     <video controls className="h-full w-full" src={video.url} />
                   ) : (
                     <div className="flex h-full items-center justify-center text-sm text-white/50">
-                      URL nao disponivel
+                      URL não disponível
                     </div>
                   )}
                 </div>
@@ -149,7 +149,7 @@ export function CoursesPage({ blocked, planExpiresAt }: CoursesPageProps) {
           </div>
         ) : pdfs.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-white/60">
-            Nenhum conteudo disponivel ainda.
+            Nenhum conteúdo disponível ainda.
           </div>
         ) : (
           <ul className="space-y-3">
@@ -160,7 +160,7 @@ export function CoursesPage({ blocked, planExpiresAt }: CoursesPageProps) {
               >
                 <div>
                   <p className="text-sm font-semibold text-white">{pdf.title}</p>
-                  <p className="text-xs text-white/50">{pdf.size ?? "Tamanho indisponivel"}</p>
+                  <p className="text-xs text-white/50">{pdf.size ?? "Tamanho indisponível"}</p>
                 </div>
                 <a
                   href={pdf.url ?? "#"}
@@ -199,7 +199,7 @@ export function CoursesPage({ blocked, planExpiresAt }: CoursesPageProps) {
           </div>
         ) : externals.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-white/60">
-            Nenhum conteudo disponivel ainda.
+            Nenhum conteúdo disponível ainda.
           </div>
         ) : (
           <ul className="space-y-3">

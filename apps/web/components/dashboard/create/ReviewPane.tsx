@@ -118,8 +118,8 @@ export function ReviewPane({
   const limitInfo = plan
     ? plan.limit === null
       ? "Sem limite definido"
-      : `${plan.used}/${plan.limit} publicacoes no mes`
-    : "Plano nao carregado";
+      : `${plan.used}/${plan.limit} publicações no mês`
+    : "Plano não carregado";
   const publishCtaLabel = hasPublishAccess ? "Publicar" : "Contratar plano";
   const baseValid = (() => {
     const title = draft?.base?.title?.trim?.() ?? "";
@@ -175,8 +175,8 @@ export function ReviewPane({
             <p className="text-xs text-white/60">{limitInfo}</p>
           </div>
           <div className="text-right text-xs text-white/60">
-            <p>Slug disponivel: {slugAvailable ? "sim" : "nao"}</p>
-            <p>Plano ativo: {plan?.active ? "sim" : "nao"}</p>
+            <p>Slug disponível: {slugAvailable ? "sim" : "não"}</p>
+            <p>Plano ativo: {plan?.active ? "sim" : "não"}</p>
           </div>
         </div>
 

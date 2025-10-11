@@ -192,6 +192,9 @@ function Stepper({
                     : "border-white/10 bg-white/5 text-white/60 hover:border-white/20"
               )}
             >
+<<<<<<< HEAD
+              {step.key !== "project" ? (\n                <span className="text-xs uppercase tracking-[0.3em]">{`0${index + 1}`}</span>\n              ) : null}
+=======
               {step.key !== "project" ? (
                 <span className="text-xs uppercase tracking-[0.3em]">{`0${index + 1}`}</span>
               ) : null}
@@ -449,7 +452,7 @@ export default function CreateProjectPage() {
     } else if (!isValidSlug(draft.base.slug.trim())) {
       errors.slug = "Use letras, numeros e hifens (minimo 3).";
     } else if (!slugAvailable) {
-      errors.slug = slugMessage ?? "Slug indisponível.";
+      errors.slug = slugMessage ?? "Slug indisponivel.";
     }
     setBaseErrors(errors);
     return Object.values(errors).every((value) => !value);
@@ -527,7 +530,7 @@ export default function CreateProjectPage() {
       // validate slug availability server-side
       const check = await apiClient.checkProjectSlugAvailability(draft.base.slug);
       if (!check.data?.available) {
-        throw new ApiClientError("Slug indisponível.", 400, null);
+        throw new ApiClientError("Slug indisponivel.", 400, null);
       }
       const payload = {
         name: draft.base.title || "Projeto sem titulo",
@@ -578,7 +581,7 @@ export default function CreateProjectPage() {
   } else if (isExpired) {
     publishBlockedMessage = "Plano expirado. Renove para publicar.";
   } else if (!slugAvailable) {
-    publishBlockedMessage = slugStatus === "checking" ? "Validando slug..." : "Slug indisponível.";
+    publishBlockedMessage = slugStatus === "checking" ? "Validando slug..." : "Slug indisponivel.";
   }
 
   const limitMessage = limitExceeded
@@ -992,3 +995,5 @@ export default function CreateProjectPage() {
     </div>
   );
 }
+
+

@@ -140,7 +140,7 @@ export function ProfilePage({ profile }: ProfilePageProps) {
     }
 
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      setAvatarError("Formato de imagem nao suportado.");
+      setAvatarError("Formato de imagem não suportado.");
       return;
     }
 
@@ -183,7 +183,7 @@ export function ProfilePage({ profile }: ProfilePageProps) {
 
       setAvatarPreview(publicUrl);
     } catch (error) {
-      setAvatarError("Nao foi possivel atualizar o avatar. Tente novamente.");
+      setAvatarError("Não foi possível atualizar o avatar. Tente novamente.");
       setAvatarPreview(profile.avatarUrl ?? null);
     } finally {
       setIsUploadingAvatar(false);
@@ -236,7 +236,7 @@ export function ProfilePage({ profile }: ProfilePageProps) {
 
       setNameFeedback("Nome atualizado com sucesso.");
     } catch (error) {
-      setNameFeedback("Nao foi possivel salvar o nome.");
+      setNameFeedback("Não foi possível salvar o nome.");
     } finally {
       setIsSavingName(false);
     }
@@ -251,7 +251,7 @@ export function ProfilePage({ profile }: ProfilePageProps) {
 
   const triggerPasswordReset = useCallback(async () => {
     if (!supabase || !profile.email) {
-      setPasswordState({ state: "error", message: "Nao foi possivel iniciar o reset de senha." });
+      setPasswordState({ state: "error", message: "Não foi possível iniciar o reset de senha." });
       return;
     }
 
@@ -273,7 +273,7 @@ export function ProfilePage({ profile }: ProfilePageProps) {
     } catch (error) {
       setPasswordState({
         state: "error",
-        message: "Nao foi possivel enviar o email de redefinicao.",
+        message: "Não foi possível enviar o email de redefinição.",
       });
     }
   }, [profile.email, supabase]);
@@ -291,7 +291,7 @@ export function ProfilePage({ profile }: ProfilePageProps) {
     }
 
     if (password !== confirmPassword) {
-      setPasswordState({ state: "error", message: "As senhas nao conferem." });
+      setPasswordState({ state: "error", message: "As senhas não conferem." });
       return;
     }
 
