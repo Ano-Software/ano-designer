@@ -69,9 +69,6 @@ type HeaderImageControlsProps = {
   onFileSelected: (file: File) => void;
   onRemoveImage: () => void;
   onPositionChange: (alignment: HeroImageAlignment) => void;
-  onToggleRemoveBackground: (checked: boolean) => void;
-  onToggleOptimizeImage: (checked: boolean) => void;
-  removingBackground?: boolean;
   uploadProgress: number | null;
   statusMessage: { type: "idle" | "info" | "success" | "error"; text: string | null };
   messages: TopoMessages;
@@ -686,13 +683,7 @@ function ToggleThumb({ checked }: { checked: boolean }) {
   );
 }
 
-export function TopoTab({
-  value,
-  onChange,
-  onRequestRemoveBackground,
-  removingBackground,
-  messages,
-}: TopoTabProps) {
+export function TopoTab({ value, onChange, messages }: TopoTabProps) {
   const copy = useMemo(() => ({ ...defaultMessages, ...messages }), [messages]);
   const [statusMessage, setStatusMessage] = useState<StatusState>({ type: "idle", text: null });
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -718,17 +709,8 @@ export function TopoTab({
         setUploadProgress(Math.min(40, Math.max(progress / 2, 5)));
       });
 
-      let processedUrl = dataUrl;
-      let backgroundRemoved = false;
-
-      if (value.autoRemoveBackground && onRequestRemoveBackground) {
-        setStatusMessage({ type: "info", text: copy.statusRemoving });
-        setUploadProgress((current) => (current === null ? 60 : Math.max(current, 60)));
-        processedUrl = await onRequestRemoveBackground(dataUrl);
-        backgroundRemoved = true;
-        setUploadProgress((current) => (current === null ? 85 : Math.max(current, 85)));
-      }
-
+      const processedUrl = dataUrl;
+      const backgroundRemoved = false;
       update({
         coverImage: {
           dataUrl: processedUrl,
@@ -772,9 +754,6 @@ export function TopoTab({
             onFileSelected={handleImageUpload}
             onRemoveImage={handleRemoveImage}
             onPositionChange={(position) => update({ coverImagePosition: position })}
-            onToggleRemoveBackground={(checked) => update({ autoRemoveBackground: checked })}
-            onToggleOptimizeImage={(checked) => update({ autoOptimizeImage: checked })}
-            removingBackground={removingBackground}
             uploadProgress={uploadProgress}
             statusMessage={statusMessage}
             messages={copy}

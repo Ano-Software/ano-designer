@@ -6,6 +6,7 @@ import type { ProjectDraft } from "./types";
 type ReviewPaneProps = {
   draft: ProjectDraft;
   slugAvailable: boolean;
+  onUpdatePublicName?: (value: string) => void;
   plan: {
     planId: string | null;
     active: boolean;
@@ -43,6 +44,7 @@ function formatTimestamp(timestamp: number | null) {
 export function ReviewPane({
   draft,
   slugAvailable,
+  onUpdatePublicName,
   plan,
   onSaveDraft,
   onPublish,
@@ -56,6 +58,60 @@ export function ReviewPane({
   limitMessage,
   lastSavedAt,
 }: ReviewPaneProps) {
+  // Link público: estado e validação
+  const [linkName, setLinkName] = useState<string>(() => draft.base.slug || "");
+  const [linkStatus, setLinkStatus] = useState<"idle" | "checking" | "available" | "unavailable">(
+    "idle"
+  );
+  const [linkMessage, setLinkMessage] = useState<string | null>(null);
+  const timerRef = useRef<number | null>(null);
+  const NAME_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const validateLocally = useCallback((value: string) => {
+    const v = value.trim().toLowerCase();
+    if (v.length < 3 || v.length > 60 || !NAME_REGEX.test(v)) {
+      setLinkStatus("unavailable");
+      setLinkMessage("Nome inválido.");
+      return false;
+    }
+    setLinkStatus("checking");
+    setLinkMessage(null);
+    return true;
+  }, []);
+
+  const triggerCheck = useCallback(
+    (value: string) => {
+      clearTimer();
+      const ok = validateLocally(value);
+      if (!ok) return;
+      const normalized = value.trim().toLowerCase();
+      timerRef.current = window.setTimeout(async () => {
+        try {
+          const res = await apiClient.checkProjectSlugAvailability(normalized);
+          const available = Boolean(res.data?.available);
+          setLinkStatus(available ? "available" : "unavailable");
+          setLinkMessage(available ? null : "Indisponível.");
+        } catch {
+          setLinkStatus("unavailable");
+          setLinkMessage("Falha ao validar.");
+        }
+      }, 400) as unknown as number;
+    },
+    [clearTimer, validateLocally]
+  );
+
+  useEffect(() => {
+    setLinkName(draft.base.slug || "");
+    if (draft.base.slug) triggerCheck(draft.base.slug);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const planLabel = plan?.planName ?? plan?.planId ?? "Plano desconhecido";
   const limitInfo = plan
     ? plan.limit === null
@@ -75,6 +131,37 @@ export function ReviewPane({
         <h2 className="text-lg font-semibold text-white">Publicar</h2>
         <p className="text-xs text-white/50">Auto save local: {formatTimestamp(lastSavedAt)}</p>
       </header>
+
+      <section className="space-y-3 rounded-2xl border border-white/10 bg-black/40 p-4 text-sm">
+        <p className="font-semibold text-white">Link do projeto</p>
+        <div className="flex items-center gap-2">
+          <span className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/70">
+            anoig.com/
+          </span>
+          <input
+            type="text"
+            aria-label="Nome do link público"
+            value={linkName}
+            onChange={(e) => {
+              const v = e.target.value.toLowerCase();
+              setLinkName(v);
+              onUpdatePublicName?.(v);
+              triggerCheck(v);
+            }}
+            placeholder="meu-projeto"
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
+          />
+        </div>
+        <div className="text-xs">
+          {linkStatus === "checking" ? (
+            <span className="text-white/60">Validando…</span>
+          ) : linkStatus === "available" ? (
+            <span className="text-green-300">Disponível</span>
+          ) : linkStatus === "unavailable" ? (
+            <span className="text-red-300">{linkMessage ?? "Indisponível"}</span>
+          ) : null}
+        </div>
+      </section>
 
       {/* Summary cards removed intentionally (Hero, Botoes, Conteudo) */}
 
