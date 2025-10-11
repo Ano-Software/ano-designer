@@ -192,9 +192,7 @@ function Stepper({
                     : "border-white/10 bg-white/5 text-white/60 hover:border-white/20"
               )}
             >
-              {step.key !== "project" ? (
-                <span className="text-xs uppercase tracking-[0.3em]">{`0${index + 1}`}</span>
-              ) : null}
+              {/* numbers removed: only show labels */}
               <span className="text-sm font-semibold">{step.title}</span>
             </button>
           </li>
