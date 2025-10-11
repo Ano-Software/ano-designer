@@ -47,8 +47,6 @@ type TopoMessages = {
 type TopoTabProps = {
   value: HeroSettings;
   onChange: (value: HeroSettings) => void;
-  onRequestRemoveBackground?: (imageDataUrl: string) => Promise<string>;
-  removingBackground?: boolean;
   messages?: Partial<TopoMessages>;
 };
 
@@ -69,8 +67,6 @@ type HeaderImageControlsProps = {
   onFileSelected: (file: File) => void;
   onRemoveImage: () => void;
   onPositionChange: (alignment: HeroImageAlignment) => void;
-  uploadProgress: number | null;
-  statusMessage: { type: "idle" | "info" | "success" | "error"; text: string | null };
   messages: TopoMessages;
 };
 
@@ -523,11 +519,6 @@ function HeaderImageControls({
   onFileSelected,
   onRemoveImage,
   onPositionChange,
-  onToggleRemoveBackground,
-  onToggleOptimizeImage,
-  removingBackground,
-  uploadProgress,
-  statusMessage,
   messages,
 }: HeaderImageControlsProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -561,37 +552,7 @@ function HeaderImageControls({
           className="block w-full text-sm text-white file:mr-4 file:rounded-full file:border-0 file:bg-white/20 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-white/30"
         />
         <p className="text-xs text-white/50">{messages.imageUploadHint}</p>
-        <div className="space-y-2" aria-live="polite">
-          {uploadProgress !== null ? (
-            <div className="space-y-1">
-              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-[#e2b23b]/80 transition-all"
-                  style={{ width: `${Math.max(0, Math.min(uploadProgress, 100))}%` }}
-                  role="progressbar"
-                  aria-valuenow={uploadProgress}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                />
-              </div>
-              <span className="text-xs text-white/60">{uploadProgress}%</span>
-            </div>
-          ) : null}
-          {statusMessage.text ? (
-            <p
-              className={cn(
-                "text-xs",
-                statusMessage.type === "error" && "text-red-300",
-                statusMessage.type === "success" && "text-emerald-300",
-                statusMessage.type === "info" && "text-white/70"
-              )}
-            >
-              {statusMessage.text}
-            </p>
-          ) : (
-            <p className="text-xs text-white/40">{messages.statusIdle}</p>
-          )}
-        </div>
+        {/* removed background/optimization progress/status UI */}
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
@@ -604,42 +565,7 @@ function HeaderImageControls({
         </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="grid gap-2 md:grid-cols-2">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={value.autoRemoveBackground}
-            onClick={() => onToggleRemoveBackground(!value.autoRemoveBackground)}
-            className={cn(
-              "flex items-center justify-between rounded-xl border px-4 py-3 text-sm transition",
-              value.autoRemoveBackground
-                ? "border-[#e2b23b] bg-[#e2b23b]/20 text-[#e2b23b]"
-                : "border-white/10 bg-white/5 text-white/70 hover:border-white/20",
-              removingBackground && "cursor-not-allowed opacity-70"
-            )}
-            disabled={removingBackground}
-          >
-            <span>{messages.toggleRemoveBackground}</span>
-            <ToggleThumb checked={value.autoRemoveBackground} />
-          </button>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={value.autoOptimizeImage}
-            onClick={() => onToggleOptimizeImage(!value.autoOptimizeImage)}
-            className={cn(
-              "flex items-center justify-between rounded-xl border px-4 py-3 text-sm transition",
-              value.autoOptimizeImage
-                ? "border-[#e2b23b] bg-[#e2b23b]/20 text-[#e2b23b]"
-                : "border-white/10 bg-white/5 text-white/70 hover:border-white/20"
-            )}
-          >
-            <span>{messages.toggleOptimizeImage}</span>
-            <ToggleThumb checked={value.autoOptimizeImage} />
-          </button>
-        </div>
-      </div>
+      {/* removed background/optimize toggles block */}
 
       <fieldset className="space-y-2">
         <span className="text-sm font-medium text-white">{messages.imageAlignmentLabel}</span>
@@ -665,28 +591,10 @@ function HeaderImageControls({
   );
 }
 
-function ToggleThumb({ checked }: { checked: boolean }) {
-  return (
-    <span
-      className={cn(
-        "relative inline-flex h-5 w-10 items-center rounded-full bg-white/20 transition",
-        checked && "bg-[#e2b23b]/40"
-      )}
-    >
-      <span
-        className={cn(
-          "h-4 w-4 rounded-full bg-white transition-transform duration-200",
-          checked ? "translate-x-5" : "translate-x-1"
-        )}
-      />
-    </span>
-  );
-}
+// removed ToggleThumb helper
 
 export function TopoTab({ value, onChange, messages }: TopoTabProps) {
   const copy = useMemo(() => ({ ...defaultMessages, ...messages }), [messages]);
-  const [statusMessage, setStatusMessage] = useState<StatusState>({ type: "idle", text: null });
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const update = (patch: Partial<HeroSettings>) => {
@@ -696,18 +604,13 @@ export function TopoTab({ value, onChange, messages }: TopoTabProps) {
   const handleImageUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       setLocalError(copy.invalidFile);
-      setStatusMessage({ type: "error", text: copy.invalidFile });
       return;
     }
 
     setLocalError(null);
-    setStatusMessage({ type: "info", text: copy.statusReading });
-    setUploadProgress(5);
 
     try {
-      const dataUrl = await readFileAsDataUrl(file, (progress) => {
-        setUploadProgress(Math.min(40, Math.max(progress / 2, 5)));
-      });
+      const dataUrl = await readFileAsDataUrl(file);
 
       const processedUrl = dataUrl;
       const backgroundRemoved = false;
@@ -719,25 +622,16 @@ export function TopoTab({ value, onChange, messages }: TopoTabProps) {
           assetUrl: processedUrl,
         },
       });
-
-      setStatusMessage({ type: "success", text: copy.statusSuccess });
-      setUploadProgress(100);
     } catch (error) {
       console.error(error);
       const message = error instanceof Error ? error.message : copy.statusError;
       setLocalError(message);
-      setStatusMessage({ type: "error", text: copy.statusError });
-      setUploadProgress(null);
-    } finally {
-      setTimeout(() => setUploadProgress(null), 1200);
     }
   };
 
   const handleRemoveImage = () => {
     update({ coverImage: null });
-    setStatusMessage({ type: "idle", text: null });
     setLocalError(null);
-    setUploadProgress(null);
   };
 
   return (
@@ -754,8 +648,6 @@ export function TopoTab({ value, onChange, messages }: TopoTabProps) {
             onFileSelected={handleImageUpload}
             onRemoveImage={handleRemoveImage}
             onPositionChange={(position) => update({ coverImagePosition: position })}
-            uploadProgress={uploadProgress}
-            statusMessage={statusMessage}
             messages={copy}
           />
           {localError ? <p className="text-sm text-red-300">{localError}</p> : null}
