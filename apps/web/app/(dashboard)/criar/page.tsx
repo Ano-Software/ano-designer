@@ -5,10 +5,7 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/Button";
 import { HeaderEditor } from "@/components/dashboard/create/HeaderEditor";
 import { ButtonCanvasEditor } from "@/components/dashboard/create/ButtonCanvasEditor";
-import {
-  MobilePreview,
-  MOBILE_PREVIEW_STICKY_TOP,
-} from "@/components/dashboard/create/MobilePreview";
+import { MobilePreview } from "@/components/dashboard/create/MobilePreview";
 import { ReviewPane } from "@/components/dashboard/create/ReviewPane";
 import {
   defaultProjectDraft,
@@ -829,10 +826,7 @@ export default function CreateProjectPage() {
           ) : null}
         </div>
 
-        <div
-          className="xl:pl-4 xl:self-start xl:sticky"
-          style={{ top: `${MOBILE_PREVIEW_STICKY_TOP}px` }}
-        >
+        <div className="xl:pl-4 xl:self-start xl:h-fit">
           <MobilePreview {...mobilePreviewProps} />
         </div>
       </div>
