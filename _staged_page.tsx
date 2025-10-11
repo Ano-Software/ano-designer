@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -22,11 +22,12 @@ import { apiClient, ApiClientError } from "@/lib/api-client";
 import type { BillingSubscriptionResource, ProjectPublicationLimitResource } from "@/types/api";
 import { cn } from "@/lib/cn";
 
-type StepKey = "project" | "style" | "publish";
+type StepKey = "base" | "style" | "content" | "review";
 
 type StepConfig = {
   key: StepKey;
   title: string;
+  subtitle: string;
 };
 
 type Feedback = {
@@ -35,9 +36,10 @@ type Feedback = {
 };
 
 const steps: StepConfig[] = [
-  { key: "project", title: "Projeto" },
-  { key: "style", title: "Estilo" },
-  { key: "publish", title: "Publicar" },
+  { key: "base", title: "Base", subtitle: "Titulo e slug" },
+  { key: "style", title: "Estilo", subtitle: "Hero e botoes" },
+  { key: "content", title: "Conteudo", subtitle: "Dados do cliente" },
+  { key: "review", title: "Revisao", subtitle: "Resumo e publico" },
 ];
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -141,7 +143,7 @@ function Stepper({
 }) {
   const currentIndex = steps.findIndex((step) => step.key === currentStep);
   return (
-    <ol className="grid gap-3 md:grid-cols-3">
+    <ol className="grid gap-3 md:grid-cols-4">
       {steps.map((step, index) => {
         const status =
           index === currentIndex ? "active" : index < currentIndex ? "done" : "pending";
@@ -159,10 +161,9 @@ function Stepper({
                     : "border-white/10 bg-white/5 text-white/60 hover:border-white/20"
               )}
             >
-              {step.key !== "project" ? (
-                <span className="text-xs uppercase tracking-[0.3em]">{`0${index + 1}`}</span>
-              ) : null}
+              <span className="text-xs uppercase tracking-[0.3em]">{`0${index + 1}`}</span>
               <span className="text-sm font-semibold">{step.title}</span>
+              <span className="text-xs text-white/60">{step.subtitle}</span>
             </button>
           </li>
         );
@@ -249,12 +250,16 @@ export default function CreateProjectPage() {
   const leaveGuard = useLeaveGuard(dirty);
 
   const [draft, setDraft] = useState<ProjectDraft>(() => ensureDraftShape(draftValue));
-  const [currentStep, setCurrentStep] = useState<StepKey>("project");
+  const [currentStep, setCurrentStep] = useState<StepKey>("base");
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [savingDraft, setSavingDraft] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [removeBgLoading, setRemoveBgLoading] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
+  const [contentErrors, setContentErrors] = useState<{
+    clientPhone?: string | null;
+    primaryLink?: string | null;
+  }>({});
   const [baseErrors, setBaseErrors] = useState<{ title?: string | null; slug?: string | null }>({});
   const [subscription, setSubscription] = useState<BillingSubscriptionResource | null>(null);
   const [publicationLimit, setPublicationLimit] = useState<ProjectPublicationLimitResource | null>(
@@ -378,7 +383,18 @@ export default function CreateProjectPage() {
     [updateDraft]
   );
 
-  // Content step removed; any content edits occur elsewhere if needed.
+  const handleContentChange = useCallback(
+    (field: "clientName" | "clientPhone" | "primaryLink", value: string) => {
+      updateDraft((current) => ({
+        ...current,
+        content: {
+          ...current.content,
+          [field]: value,
+        },
+      }));
+    },
+    [updateDraft]
+  );
 
   const handleGenerateSlug = useCallback(() => {
     if (!draft.base.title.trim()) {
@@ -415,6 +431,20 @@ export default function CreateProjectPage() {
     return Object.values(errors).every((value) => !value);
   }, [draft.base.slug, draft.base.title, slugAvailable, slugMessage]);
 
+  const validateContentStep = useCallback(() => {
+    const errors: { clientPhone?: string | null; primaryLink?: string | null } = {};
+    if (!draft.content.primaryLink.trim()) {
+      errors.primaryLink = "Informe o link principal.";
+    } else if (!isValidUrl(draft.content.primaryLink.trim())) {
+      errors.primaryLink = "URL invalida.";
+    }
+    if (!isValidPhone(draft.content.clientPhone.trim())) {
+      errors.clientPhone = "Telefone deve ter entre 9 e 14 digitos.";
+    }
+    setContentErrors(errors);
+    return Object.values(errors).every((value) => !value);
+  }, [draft.content.clientPhone, draft.content.primaryLink]);
+
   const goNext = useCallback(() => {
     const order: StepKey[] = steps.map((step) => step.key);
     const index = order.indexOf(currentStep);
@@ -425,11 +455,14 @@ export default function CreateProjectPage() {
     if (!next) {
       return;
     }
-    if (currentStep === "project" && !validateBaseStep()) {
+    if (currentStep === "base" && !validateBaseStep()) {
+      return;
+    }
+    if (currentStep === "content" && !validateContentStep()) {
       return;
     }
     setCurrentStep(next);
-  }, [currentStep, validateBaseStep]);
+  }, [currentStep, validateBaseStep, validateContentStep]);
 
   const goPrevious = useCallback(() => {
     const order: StepKey[] = steps.map((step) => step.key);
@@ -537,6 +570,10 @@ export default function CreateProjectPage() {
 
   const baseStepInvalid =
     !draft.base.title.trim() || !draft.base.slug.trim() || !isValidSlug(draft.base.slug.trim());
+  const contentStepInvalid =
+    !draft.content.primaryLink.trim() ||
+    !isValidUrl(draft.content.primaryLink.trim()) ||
+    !isValidPhone(draft.content.clientPhone.trim());
 
   const mobilePreviewProps = useMemo(
     () => ({
@@ -559,10 +596,10 @@ export default function CreateProjectPage() {
       }
     : null;
 
-  const projectStepContent = (
+  const baseStepContent = (
     <section className="space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_20px_50px_rgba(13,32,24,0.35)] backdrop-blur">
       <header className="space-y-1">
-        <h2 className="text-lg font-semibold text-white">Projeto</h2>
+        <h2 className="text-lg font-semibold text-white">Base do projeto</h2>
         <p className="text-sm text-white/70">Defina titulo e slug unico para o link.</p>
       </header>
 
@@ -637,9 +674,63 @@ export default function CreateProjectPage() {
     </div>
   );
 
-  // Content step removed per 3-steps flow
+  const contentStepContent = (
+    <section className="space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_20px_50px_rgba(13,32,24,0.35)] backdrop-blur">
+      <header className="space-y-1">
+        <h2 className="text-lg font-semibold text-white">Conteudo adicional</h2>
+        <p className="text-sm text-white/70">
+          Dados que serao usados nos CTAs e informacoes do projeto.
+        </p>
+      </header>
 
-  const publishStepContent = (
+      <div className="space-y-4">
+        <label className="block space-y-2">
+          <span className="text-sm font-medium text-white">Nome do cliente</span>
+          <input
+            type="text"
+            value={draft.content.clientName}
+            onChange={(event) => handleContentChange("clientName", event.target.value)}
+            placeholder="Cliente de exemplo"
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
+          />
+        </label>
+
+        <label className="block space-y-2">
+          <span className="text-sm font-medium text-white">Telefone</span>
+          <input
+            type="tel"
+            value={draft.content.clientPhone}
+            onChange={(event) => handleContentChange("clientPhone", event.target.value)}
+            placeholder="(11) 99999-9999"
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
+          />
+          {contentErrors.clientPhone ? (
+            <span className="text-xs text-red-300">{contentErrors.clientPhone}</span>
+          ) : null}
+        </label>
+
+        <label className="block space-y-2">
+          <span className="text-sm font-medium text-white">Link do botao principal</span>
+          <input
+            type="url"
+            value={draft.content.primaryLink}
+            onChange={(event) => handleContentChange("primaryLink", event.target.value)}
+            placeholder="https://"
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
+          />
+          {contentErrors.primaryLink ? (
+            <span className="text-xs text-red-300">{contentErrors.primaryLink}</span>
+          ) : (
+            <span className="text-xs text-white/50">
+              Obrigatorio. Esse link sera usado no CTA principal.
+            </span>
+          )}
+        </label>
+      </div>
+    </section>
+  );
+
+  const reviewStepContent = (
     <ReviewPane
       draft={draft}
       slugAvailable={slugAvailable}
@@ -659,11 +750,13 @@ export default function CreateProjectPage() {
   );
 
   const currentPanel =
-    currentStep === "project"
-      ? projectStepContent
+    currentStep === "base"
+      ? baseStepContent
       : currentStep === "style"
         ? styleStepContent
-        : publishStepContent;
+        : currentStep === "content"
+          ? contentStepContent
+          : reviewStepContent;
 
   return (
     <div className="space-y-10">
@@ -689,12 +782,12 @@ export default function CreateProjectPage() {
         <div className="space-y-6">
           {currentPanel}
 
-          {currentStep !== "publish" ? (
+          {currentStep !== "review" ? (
             <div className="flex items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={goPrevious}
-                disabled={currentStep === "project"}
+                disabled={currentStep === "base"}
                 className="rounded-xl border border-white/15 bg-transparent px-4 py-2 text-sm text-white/70 transition hover:border-white/30 disabled:cursor-not-allowed disabled:border-white/5 disabled:text-white/30"
               >
                 Voltar
@@ -703,7 +796,10 @@ export default function CreateProjectPage() {
                 type="button"
                 onClick={goNext}
                 variant="primary"
-                disabled={currentStep === "project" && baseStepInvalid}
+                disabled={
+                  (currentStep === "base" && baseStepInvalid) ||
+                  (currentStep === "content" && contentStepInvalid)
+                }
               >
                 Avancar
               </Button>

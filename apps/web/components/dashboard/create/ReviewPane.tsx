@@ -63,12 +63,16 @@ export function ReviewPane({
       : `${plan.used}/${plan.limit} publicacoes no mes`
     : "Plano nao carregado";
   const publishCtaLabel = hasPublishAccess ? "Publicar" : "Contratar plano";
+  const baseValid = (() => {
+    const title = draft.base.title.trim();
+    const slug = draft.base.slug.trim();
+    return title.length >= 3 && title.length <= 120 && slug.length >= 3;
+  })();
 
   return (
     <section className="space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_20px_50px_rgba(13,32,24,0.35)] backdrop-blur">
       <header className="space-y-1">
-        <h2 className="text-lg font-semibold text-white">Revisao final</h2>
-        <p className="text-sm text-white/70">Confirme dados, plano e limites antes de publicar.</p>
+        <h2 className="text-lg font-semibold text-white">Publicar</h2>
         <p className="text-xs text-white/50">Auto save local: {formatTimestamp(lastSavedAt)}</p>
       </header>
 
@@ -110,7 +114,9 @@ export function ReviewPane({
             onClick={hasPublishAccess ? onPublish : onUpgrade}
             isLoading={publishing && hasPublishAccess}
             variant={hasPublishAccess ? "primary" : "outline"}
-            disabled={hasPublishAccess ? publishing || limitExceeded || !slugAvailable : false}
+            disabled={
+              hasPublishAccess ? publishing || limitExceeded || !slugAvailable || !baseValid : false
+            }
           >
             {publishCtaLabel}
           </Button>
