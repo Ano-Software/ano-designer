@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -192,7 +192,9 @@ function Stepper({
                     : "border-white/10 bg-white/5 text-white/60 hover:border-white/20"
               )}
             >
-              {/* numbers removed: only show labels */}
+              {step.key !== "project" ? (
+                <span className="text-xs uppercase tracking-[0.3em]">{`0${index + 1}`}</span>
+              ) : null}
               <span className="text-sm font-semibold">{step.title}</span>
             </button>
           </li>
@@ -660,7 +662,7 @@ export default function CreateProjectPage() {
             className="w-full rounded-xl border border-white/25 bg-[#1b2433] px-4 py-3 text-sm text-white/90 transition focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#facc15] hover:border-white/40"
           >
             <option value="nao" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-              Não
+              NÃ£o
             </option>
             <option value="sim" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
               Sim
@@ -669,7 +671,7 @@ export default function CreateProjectPage() {
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-white">Data de criação</span>
+          <span className="text-sm font-medium text-white">Data de criaÃ§Ã£o</span>
           <input
             type="date"
             value={formatDateInput(draft.base.createdAt)}
@@ -725,7 +727,7 @@ export default function CreateProjectPage() {
                 base: { ...current.base, companyName: e.target.value },
               }))
             }
-            placeholder="Razão social"
+            placeholder="RazÃ£o social"
             className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
           />
         </label>
@@ -798,7 +800,7 @@ export default function CreateProjectPage() {
               Selecione
             </option>
             <option value="pf" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-              Pessoa Física
+              Pessoa FÃ­sica
             </option>
             <option value="pj" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
               Empresa
@@ -852,7 +854,7 @@ export default function CreateProjectPage() {
                   Pix
                 </option>
                 <option value="cartao" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-                  Cartão
+                  CartÃ£o
                 </option>
                 <option value="boleto" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
                   Boleto
