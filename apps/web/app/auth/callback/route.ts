@@ -1,15 +1,18 @@
 ﻿import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import type { Database } from "@/types/supabase";
 import { getPublicSupabaseConfig } from "@/lib/env";
+
+export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
+  const origin = requestUrl.origin;
   const code = requestUrl.searchParams.get("code");
   const next = requestUrl.searchParams.get("next");
   const errorDescription = requestUrl.searchParams.get("error_description");
   const type = requestUrl.searchParams.get("type");
-  const origin = requestUrl.origin;
 
   const config = getPublicSupabaseConfig();
 
@@ -18,22 +21,40 @@ export async function GET(request: Request) {
   }
 
   if (errorDescription) {
-    const params = new URLSearchParams({ error: errorDescription });
-    return NextResponse.redirect(`${origin}/login?${params.toString()}`);
+    return NextResponse.redirect(`${origin}/login?error=oauth`);
   }
 
-  if (code) {
-    const supabase = createRouteHandlerClient({ cookies }, config);
-    await supabase.auth.exchangeCodeForSession(code);
+  if (!code) {
+    return NextResponse.redirect(`${origin}/login?error=oauth`);
   }
 
-  let destination = "/dashboard";
+  try {
+    const supabase = createRouteHandlerClient<Database>(
+      { cookies: () => cookies() },
+      {
+        supabaseUrl: config.supabaseUrl,
+        supabaseKey: config.supabaseKey,
+      }
+    );
+
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (error) {
+      console.error("[auth/callback] exchange error", error);
+      return NextResponse.redirect(`${origin}/login?error=oauth`);
+    }
+  } catch (unknownError) {
+    console.error("[auth/callback] unexpected error", unknownError);
+    return NextResponse.redirect(`${origin}/login?error=oauth`);
+  }
 
   if (type === "recovery") {
-    destination = "/reset/update";
-  } else if (next && next.startsWith("/")) {
-    destination = next;
+    return NextResponse.redirect(`${origin}/reset/update`);
   }
 
-  return NextResponse.redirect(`${origin}${destination}`);
+  if (next && next.startsWith("/")) {
+    return NextResponse.redirect(`${origin}${next}`);
+  }
+
+  return NextResponse.redirect(`${origin}/dashboard`);
 }

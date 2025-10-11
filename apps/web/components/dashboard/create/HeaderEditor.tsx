@@ -47,8 +47,6 @@ type TopoMessages = {
 type TopoTabProps = {
   value: HeroSettings;
   onChange: (value: HeroSettings) => void;
-  onRequestRemoveBackground?: (imageDataUrl: string) => Promise<string>;
-  removingBackground?: boolean;
   messages?: Partial<TopoMessages>;
 };
 
@@ -69,11 +67,6 @@ type HeaderImageControlsProps = {
   onFileSelected: (file: File) => void;
   onRemoveImage: () => void;
   onPositionChange: (alignment: HeroImageAlignment) => void;
-  onToggleRemoveBackground: (checked: boolean) => void;
-  onToggleOptimizeImage: (checked: boolean) => void;
-  removingBackground?: boolean;
-  uploadProgress: number | null;
-  statusMessage: { type: "idle" | "info" | "success" | "error"; text: string | null };
   messages: TopoMessages;
 };
 
@@ -99,19 +92,19 @@ const SUBTITLE_SIZE = { min: 14, max: 48, default: 18 } as const;
 
 const defaultMessages: TopoMessages = {
   tabTitle: "Topo",
-  tabDescription: "Configure altura, fundo, textos e imagem do cabecalho com previsao ao vivo.",
-  previewLabel: "Previa do cabecalho",
-  heightLabel: "Altura do cabecalho",
+  tabDescription: "Configure altura, fundo, textos e imagem do cabeçalho com previsão ao vivo.",
+  previewLabel: "Prévia do cabeçalho",
+  heightLabel: "Altura do cabeçalho",
   heightValue: "Altura atual: {value}px",
   heightHelp: "Ajuste apenas a borda inferior. O topo permanece fixo.",
-  backgroundSolid: "Cor solida",
+  backgroundSolid: "Cor sólida",
   backgroundGradient: "Gradiente",
   gradientFrom: "Cor inicial",
   gradientTo: "Cor final",
-  gradientAngle: "Angulo",
-  titleLabel: "Titulo",
+  gradientAngle: "Ângulo",
+  titleLabel: "Título",
   titlePlaceholder: "Nome forte para o destaque",
-  subtitleLabel: "Subtitulo",
+  subtitleLabel: "Subtítulo",
   subtitlePlaceholder: "Mensagem breve de apoio",
   titleColorLabel: "Cor do titulo",
   subtitleColorLabel: "Cor do subtitulo",
@@ -119,7 +112,7 @@ const defaultMessages: TopoMessages = {
   alignmentLeft: "Esquerda",
   alignmentCenter: "Centro",
   alignmentRight: "Direita",
-  imageLabel: "Foto de cabecalho",
+  imageLabel: "Foto de cabeçalho",
   imageUploadHint: "PNG, JPG ou WebP. A imagem ocupa 100% da altura configurada.",
   removeImage: "Remover imagem",
   imageAlignmentLabel: "Alinhamento da foto",
@@ -132,8 +125,8 @@ const defaultMessages: TopoMessages = {
   statusReading: "Processando upload...",
   statusRemoving: "Removendo fundo no servidor...",
   statusSuccess: "Imagem pronta!",
-  statusError: "Nao foi possivel processar a imagem.",
-  invalidFile: "Selecione um arquivo de imagem valido.",
+  statusError: "Não foi possível processar a imagem.",
+  invalidFile: "Selecione um arquivo de imagem válido.",
 };
 
 const alignmentGlyphs: Record<HeroSettings["alignment"], string> = {
@@ -251,7 +244,7 @@ function PreviewPane({ value, messages }: { value: HeroSettings; messages: TopoM
           {value.coverImage ? (
             <img
               src={value.coverImage.assetUrl ?? value.coverImage.dataUrl}
-              alt="Pre-visualizacao do cabecalho"
+              alt="Pré-visualização do cabeçalho"
               className="absolute inset-0 h-full w-full object-cover"
               style={{ objectPosition: imageObjectPosition[value.coverImagePosition] }}
             />
@@ -271,7 +264,7 @@ function PreviewPane({ value, messages }: { value: HeroSettings; messages: TopoM
                 className={cn("font-semibold", fontClass(value.titleFont))}
                 style={{ fontSize: `${titleSize}px`, lineHeight: 1.1, color: value.titleColor }}
               >
-                {value.heading || "Titulo de exemplo"}
+                {value.heading || "Título de exemplo"}
               </h3>
               {value.subheading ? (
                 <p
@@ -526,11 +519,6 @@ function HeaderImageControls({
   onFileSelected,
   onRemoveImage,
   onPositionChange,
-  onToggleRemoveBackground,
-  onToggleOptimizeImage,
-  removingBackground,
-  uploadProgress,
-  statusMessage,
   messages,
 }: HeaderImageControlsProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -564,37 +552,7 @@ function HeaderImageControls({
           className="block w-full text-sm text-white file:mr-4 file:rounded-full file:border-0 file:bg-white/20 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-white/30"
         />
         <p className="text-xs text-white/50">{messages.imageUploadHint}</p>
-        <div className="space-y-2" aria-live="polite">
-          {uploadProgress !== null ? (
-            <div className="space-y-1">
-              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-[#e2b23b]/80 transition-all"
-                  style={{ width: `${Math.max(0, Math.min(uploadProgress, 100))}%` }}
-                  role="progressbar"
-                  aria-valuenow={uploadProgress}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                />
-              </div>
-              <span className="text-xs text-white/60">{uploadProgress}%</span>
-            </div>
-          ) : null}
-          {statusMessage.text ? (
-            <p
-              className={cn(
-                "text-xs",
-                statusMessage.type === "error" && "text-red-300",
-                statusMessage.type === "success" && "text-emerald-300",
-                statusMessage.type === "info" && "text-white/70"
-              )}
-            >
-              {statusMessage.text}
-            </p>
-          ) : (
-            <p className="text-xs text-white/40">{messages.statusIdle}</p>
-          )}
-        </div>
+        {/* removed background/optimization progress/status UI */}
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
@@ -607,42 +565,7 @@ function HeaderImageControls({
         </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="grid gap-2 md:grid-cols-2">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={value.autoRemoveBackground}
-            onClick={() => onToggleRemoveBackground(!value.autoRemoveBackground)}
-            className={cn(
-              "flex items-center justify-between rounded-xl border px-4 py-3 text-sm transition",
-              value.autoRemoveBackground
-                ? "border-[#e2b23b] bg-[#e2b23b]/20 text-[#e2b23b]"
-                : "border-white/10 bg-white/5 text-white/70 hover:border-white/20",
-              removingBackground && "cursor-not-allowed opacity-70"
-            )}
-            disabled={removingBackground}
-          >
-            <span>{messages.toggleRemoveBackground}</span>
-            <ToggleThumb checked={value.autoRemoveBackground} />
-          </button>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={value.autoOptimizeImage}
-            onClick={() => onToggleOptimizeImage(!value.autoOptimizeImage)}
-            className={cn(
-              "flex items-center justify-between rounded-xl border px-4 py-3 text-sm transition",
-              value.autoOptimizeImage
-                ? "border-[#e2b23b] bg-[#e2b23b]/20 text-[#e2b23b]"
-                : "border-white/10 bg-white/5 text-white/70 hover:border-white/20"
-            )}
-          >
-            <span>{messages.toggleOptimizeImage}</span>
-            <ToggleThumb checked={value.autoOptimizeImage} />
-          </button>
-        </div>
-      </div>
+      {/* removed background/optimize toggles block */}
 
       <fieldset className="space-y-2">
         <span className="text-sm font-medium text-white">{messages.imageAlignmentLabel}</span>
@@ -668,34 +591,10 @@ function HeaderImageControls({
   );
 }
 
-function ToggleThumb({ checked }: { checked: boolean }) {
-  return (
-    <span
-      className={cn(
-        "relative inline-flex h-5 w-10 items-center rounded-full bg-white/20 transition",
-        checked && "bg-[#e2b23b]/40"
-      )}
-    >
-      <span
-        className={cn(
-          "h-4 w-4 rounded-full bg-white transition-transform duration-200",
-          checked ? "translate-x-5" : "translate-x-1"
-        )}
-      />
-    </span>
-  );
-}
+// removed ToggleThumb helper
 
-export function TopoTab({
-  value,
-  onChange,
-  onRequestRemoveBackground,
-  removingBackground,
-  messages,
-}: TopoTabProps) {
+export function TopoTab({ value, onChange, messages }: TopoTabProps) {
   const copy = useMemo(() => ({ ...defaultMessages, ...messages }), [messages]);
-  const [statusMessage, setStatusMessage] = useState<StatusState>({ type: "idle", text: null });
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const update = (patch: Partial<HeroSettings>) => {
@@ -705,30 +604,16 @@ export function TopoTab({
   const handleImageUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       setLocalError(copy.invalidFile);
-      setStatusMessage({ type: "error", text: copy.invalidFile });
       return;
     }
 
     setLocalError(null);
-    setStatusMessage({ type: "info", text: copy.statusReading });
-    setUploadProgress(5);
 
     try {
-      const dataUrl = await readFileAsDataUrl(file, (progress) => {
-        setUploadProgress(Math.min(40, Math.max(progress / 2, 5)));
-      });
+      const dataUrl = await readFileAsDataUrl(file);
 
-      let processedUrl = dataUrl;
-      let backgroundRemoved = false;
-
-      if (value.autoRemoveBackground && onRequestRemoveBackground) {
-        setStatusMessage({ type: "info", text: copy.statusRemoving });
-        setUploadProgress((current) => (current === null ? 60 : Math.max(current, 60)));
-        processedUrl = await onRequestRemoveBackground(dataUrl);
-        backgroundRemoved = true;
-        setUploadProgress((current) => (current === null ? 85 : Math.max(current, 85)));
-      }
-
+      const processedUrl = dataUrl;
+      const backgroundRemoved = false;
       update({
         coverImage: {
           dataUrl: processedUrl,
@@ -737,25 +622,16 @@ export function TopoTab({
           assetUrl: processedUrl,
         },
       });
-
-      setStatusMessage({ type: "success", text: copy.statusSuccess });
-      setUploadProgress(100);
     } catch (error) {
       console.error(error);
       const message = error instanceof Error ? error.message : copy.statusError;
       setLocalError(message);
-      setStatusMessage({ type: "error", text: copy.statusError });
-      setUploadProgress(null);
-    } finally {
-      setTimeout(() => setUploadProgress(null), 1200);
     }
   };
 
   const handleRemoveImage = () => {
     update({ coverImage: null });
-    setStatusMessage({ type: "idle", text: null });
     setLocalError(null);
-    setUploadProgress(null);
   };
 
   return (
@@ -772,11 +648,6 @@ export function TopoTab({
             onFileSelected={handleImageUpload}
             onRemoveImage={handleRemoveImage}
             onPositionChange={(position) => update({ coverImagePosition: position })}
-            onToggleRemoveBackground={(checked) => update({ autoRemoveBackground: checked })}
-            onToggleOptimizeImage={(checked) => update({ autoOptimizeImage: checked })}
-            removingBackground={removingBackground}
-            uploadProgress={uploadProgress}
-            statusMessage={statusMessage}
             messages={copy}
           />
           {localError ? <p className="text-sm text-red-300">{localError}</p> : null}

@@ -19,7 +19,7 @@ const HEADER_HEIGHT_MIN = 150;
 const HEADER_HEIGHT_MAX = 420;
 const TITLE_COLOR_FALLBACK = "#ffffff";
 const SUBTITLE_COLOR_FALLBACK = "#f1f5f9";
-const STICKY_TOP = 84;
+export const MOBILE_PREVIEW_STICKY_TOP = 84;
 const BOTTOM_MARGIN = 32;
 const SCALE_PADDING = 0.98;
 const MIN_SCALE = 0.65;
@@ -103,7 +103,7 @@ function HeroSection({ baseTitle, hero }: { baseTitle: string; hero: HeroSetting
       {coverSource ? (
         <img
           src={coverSource}
-          alt="Imagem do cabecalho"
+          alt="Imagem do cabeçalho"
           className="absolute inset-0 h-full w-full object-cover"
           style={{ objectPosition: imageObjectPosition[hero.coverImagePosition] }}
         />
@@ -297,7 +297,10 @@ export function MobilePreview(props: MobilePreviewProps) {
     const deviceWidth = deviceSize.width || FALLBACK_DEVICE_WIDTH;
     const deviceHeight = deviceSize.height || FALLBACK_DEVICE_HEIGHT;
     const availableWidth = wrapper.clientWidth;
-    const availableHeight = Math.max(200, window.innerHeight - STICKY_TOP - BOTTOM_MARGIN);
+    const availableHeight = Math.max(
+      200,
+      window.innerHeight - MOBILE_PREVIEW_STICKY_TOP - BOTTOM_MARGIN
+    );
     const rawScale =
       Math.min(availableWidth / deviceWidth, availableHeight / deviceHeight) * SCALE_PADDING;
     const clamped = Math.min(MAX_SCALE, Math.max(MIN_SCALE, rawScale));
@@ -470,19 +473,17 @@ export function MobilePreview(props: MobilePreviewProps) {
   return (
     <aside className="space-y-6">
       <div className="hidden lg:block">
-        <div className="sticky" style={{ top: `${STICKY_TOP}px` }}>
-          <div ref={wrapperRef} className="flex w-full justify-center">
-            <div className="relative" style={wrapperStyle}>
-              <div
-                ref={deviceRef}
-                className="relative mx-auto aspect-[9/19.5] w-full max-w-[380px] rounded-[3rem] border border-black/20 bg-black/90 p-2 shadow-2xl"
-                style={deviceStyle}
-              >
-                <div className="absolute left-1/2 top-2 h-6 w-36 -translate-x-1/2 rounded-b-2xl bg-black/80" />
-                <div className="relative h-full w-full overflow-hidden rounded-[2.6rem] bg-white">
-                  <div ref={scrollContainerRef} className="h-full w-full overflow-y-auto">
-                    <Screen {...props} />
-                  </div>
+        <div ref={wrapperRef} className="flex w-full justify-center">
+          <div className="relative" style={wrapperStyle}>
+            <div
+              ref={deviceRef}
+              className="relative mx-auto aspect-[9/19.5] w-full max-w-[380px] rounded-[3rem] border border-black/20 bg-black/90 p-2 shadow-2xl"
+              style={deviceStyle}
+            >
+              <div className="absolute left-1/2 top-2 h-6 w-36 -translate-x-1/2 rounded-b-2xl bg-black/80" />
+              <div className="relative h-full w-full overflow-hidden rounded-[2.6rem] bg-white">
+                <div ref={scrollContainerRef} className="h-full w-full overflow-y-auto">
+                  <Screen {...props} />
                 </div>
               </div>
             </div>

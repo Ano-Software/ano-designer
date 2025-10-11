@@ -17,16 +17,17 @@ import {
 import { useDraft } from "@/hooks/useDraft";
 import { useSlugAvailability } from "@/hooks/useSlugAvailability";
 import { useLeaveGuard } from "@/hooks/useLeaveGuard";
-// removeBackground logic/UI removed from Estilo per requirements
+import { removeBackground } from "@/lib/remove-background";
 import { apiClient, ApiClientError } from "@/lib/api-client";
 import type { BillingSubscriptionResource, ProjectPublicationLimitResource } from "@/types/api";
 import { cn } from "@/lib/cn";
 
-type StepKey = "project" | "style" | "publish";
+type StepKey = "base" | "style" | "content" | "review";
 
 type StepConfig = {
   key: StepKey;
   title: string;
+  subtitle: string;
 };
 
 type Feedback = {
@@ -35,9 +36,10 @@ type Feedback = {
 };
 
 const steps: StepConfig[] = [
-  { key: "project", title: "Projeto" },
-  { key: "style", title: "Estilo" },
-  { key: "publish", title: "Publicar" },
+  { key: "base", title: "Base", subtitle: "Titulo e slug" },
+  { key: "style", title: "Estilo", subtitle: "Hero e botoes" },
+  { key: "content", title: "Conteudo", subtitle: "Dados do cliente" },
+  { key: "review", title: "Revisao", subtitle: "Resumo e publico" },
 ];
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -109,39 +111,6 @@ function isValidPhone(phone: string) {
   return digits.length >= 9 && digits.length <= 14;
 }
 
-function maskPhoneBR(input: string) {
-  const digits = input.replace(/\D/g, "").slice(0, 11);
-  if (digits.length <= 2) return digits.replace(/(\d{0,2})/, "($1");
-  if (digits.length <= 7) return digits.replace(/(\d{2})(\d{0,5})/, "($1) $2");
-  return digits.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3");
-}
-
-function toE164BR(input: string): string | null {
-  const digits = input.replace(/\D/g, "");
-  if (digits.length === 10 || digits.length === 11) {
-    return "+55" + digits;
-  }
-  return null;
-}
-
-function isValidEmail(email: string) {
-  if (!email) return true;
-  return /.+@.+\..+/.test(email);
-}
-
-function formatDateInput(iso: string | null | undefined) {
-  try {
-    if (!iso) return "";
-    const d = new Date(iso);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  } catch {
-    return "";
-  }
-}
-
 function formatPlanLimit(plan: ProjectPublicationLimitResource | null) {
   if (!plan) {
     return null;
@@ -174,7 +143,7 @@ function Stepper({
 }) {
   const currentIndex = steps.findIndex((step) => step.key === currentStep);
   return (
-    <ol className="grid gap-3 md:grid-cols-3">
+    <ol className="grid gap-3 md:grid-cols-4">
       {steps.map((step, index) => {
         const status =
           index === currentIndex ? "active" : index < currentIndex ? "done" : "pending";
@@ -192,10 +161,9 @@ function Stepper({
                     : "border-white/10 bg-white/5 text-white/60 hover:border-white/20"
               )}
             >
-              {step.key !== "project" ? (
-                <span className="text-xs uppercase tracking-[0.3em]">{`0${index + 1}`}</span>
-              ) : null}
+              <span className="text-xs uppercase tracking-[0.3em]">{`0${index + 1}`}</span>
               <span className="text-sm font-semibold">{step.title}</span>
+              <span className="text-xs text-white/60">{step.subtitle}</span>
             </button>
           </li>
         );
@@ -282,21 +250,17 @@ export default function CreateProjectPage() {
   const leaveGuard = useLeaveGuard(dirty);
 
   const [draft, setDraft] = useState<ProjectDraft>(() => ensureDraftShape(draftValue));
-  const [currentStep, setCurrentStep] = useState<StepKey>("project");
+  const [currentStep, setCurrentStep] = useState<StepKey>("base");
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [savingDraft, setSavingDraft] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [removeBgLoading, setRemoveBgLoading] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
-  const [baseErrors, setBaseErrors] = useState<{
-    title?: string | null;
-    slug?: string | null;
-    clientEmail?: string | null;
-    dueDate?: string | null;
-    amountPaid?: string | null;
-    paymentMethod?: string | null;
-    clientName?: string | null;
-    clientType?: string | null;
+  const [contentErrors, setContentErrors] = useState<{
+    clientPhone?: string | null;
+    primaryLink?: string | null;
   }>({});
+  const [baseErrors, setBaseErrors] = useState<{ title?: string | null; slug?: string | null }>({});
   const [subscription, setSubscription] = useState<BillingSubscriptionResource | null>(null);
   const [publicationLimit, setPublicationLimit] = useState<ProjectPublicationLimitResource | null>(
     null
@@ -419,7 +383,18 @@ export default function CreateProjectPage() {
     [updateDraft]
   );
 
-  // Content step removed; any content edits occur elsewhere if needed.
+  const handleContentChange = useCallback(
+    (field: "clientName" | "clientPhone" | "primaryLink", value: string) => {
+      updateDraft((current) => ({
+        ...current,
+        content: {
+          ...current.content,
+          [field]: value,
+        },
+      }));
+    },
+    [updateDraft]
+  );
 
   const handleGenerateSlug = useCallback(() => {
     if (!draft.base.title.trim()) {
@@ -431,13 +406,14 @@ export default function CreateProjectPage() {
     setSlugTouched(true);
   }, [draft.base.title, handleSlugChange, checkSlugNow]);
 
-  // autosave local draft (debounce ~600ms)
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      persistDraft();
-    }, 600);
-    return () => window.clearTimeout(timer);
-  }, [persistDraft, draft.base]);
+  const handleRemoveBackground = useCallback(async (image: string) => {
+    setRemoveBgLoading(true);
+    try {
+      return await removeBackground(image);
+    } finally {
+      setRemoveBgLoading(false);
+    }
+  }, []);
 
   const validateBaseStep = useCallback(() => {
     const errors: { title?: string | null; slug?: string | null } = {};
@@ -449,11 +425,25 @@ export default function CreateProjectPage() {
     } else if (!isValidSlug(draft.base.slug.trim())) {
       errors.slug = "Use letras, numeros e hifens (minimo 3).";
     } else if (!slugAvailable) {
-      errors.slug = slugMessage ?? "Slug indisponível.";
+      errors.slug = slugMessage ?? "Slug indisponivel.";
     }
     setBaseErrors(errors);
     return Object.values(errors).every((value) => !value);
   }, [draft.base.slug, draft.base.title, slugAvailable, slugMessage]);
+
+  const validateContentStep = useCallback(() => {
+    const errors: { clientPhone?: string | null; primaryLink?: string | null } = {};
+    if (!draft.content.primaryLink.trim()) {
+      errors.primaryLink = "Informe o link principal.";
+    } else if (!isValidUrl(draft.content.primaryLink.trim())) {
+      errors.primaryLink = "URL invalida.";
+    }
+    if (!isValidPhone(draft.content.clientPhone.trim())) {
+      errors.clientPhone = "Telefone deve ter entre 9 e 14 digitos.";
+    }
+    setContentErrors(errors);
+    return Object.values(errors).every((value) => !value);
+  }, [draft.content.clientPhone, draft.content.primaryLink]);
 
   const goNext = useCallback(() => {
     const order: StepKey[] = steps.map((step) => step.key);
@@ -465,13 +455,14 @@ export default function CreateProjectPage() {
     if (!next) {
       return;
     }
-    if (currentStep === "project" && !validateBaseStep()) {
+    if (currentStep === "base" && !validateBaseStep()) {
       return;
     }
-    // autosave on step advance
-    persistDraft();
+    if (currentStep === "content" && !validateContentStep()) {
+      return;
+    }
     setCurrentStep(next);
-  }, [currentStep, validateBaseStep, persistDraft]);
+  }, [currentStep, validateBaseStep, validateContentStep]);
 
   const goPrevious = useCallback(() => {
     const order: StepKey[] = steps.map((step) => step.key);
@@ -524,17 +515,9 @@ export default function CreateProjectPage() {
     setFeedback(null);
     setPublishing(true);
     try {
-      // validate slug availability server-side
-      const check = await apiClient.checkProjectSlugAvailability(draft.base.slug);
-      if (!check.data?.available) {
-        throw new ApiClientError("Slug indisponível.", 400, null);
-      }
       const payload = {
         name: draft.base.title || "Projeto sem titulo",
-        description: JSON.stringify({
-          ...draft,
-          publication: { status: "published", publicPath: draft.base.slug },
-        }),
+        description: JSON.stringify({ ...draft, publication: { status: "published" } }),
       };
       await apiClient.createProject(payload as any);
       discardDraft();
@@ -578,32 +561,19 @@ export default function CreateProjectPage() {
   } else if (isExpired) {
     publishBlockedMessage = "Plano expirado. Renove para publicar.";
   } else if (!slugAvailable) {
-    publishBlockedMessage = slugStatus === "checking" ? "Validando slug..." : "Slug indisponível.";
+    publishBlockedMessage = slugStatus === "checking" ? "Validando slug..." : "Slug indisponivel.";
   }
 
   const limitMessage = limitExceeded
     ? `Limite mensal atingido (${computedLimit} publicacoes). Atualize seu plano para continuar.`
     : undefined;
 
-  const baseStepInvalid = (() => {
-    const title = draft.base.title.trim();
-    if (title.length < 3 || title.length > 120) return true;
-    if (!draft.base.clientName.trim()) return true;
-    if (!draft.base.clientType) return true;
-    // due date must be >= createdAt
-    if (draft.base.dueDate) {
-      const created = new Date(draft.base.createdAt);
-      const due = new Date(draft.base.dueDate);
-      if (due < new Date(created.getFullYear(), created.getMonth(), created.getDate())) return true;
-    }
-    if (draft.base.clientEmail && !isValidEmail(draft.base.clientEmail)) return true;
-    if (draft.base.paid) {
-      if (draft.base.amountPaid == null || isNaN(draft.base.amountPaid)) return true;
-      if ((draft.base.amountPaid as number) < 0) return true;
-      if (!draft.base.paymentMethod) return true;
-    }
-    return !draft.base.slug.trim() || !isValidSlug(draft.base.slug.trim());
-  })();
+  const baseStepInvalid =
+    !draft.base.title.trim() || !draft.base.slug.trim() || !isValidSlug(draft.base.slug.trim());
+  const contentStepInvalid =
+    !draft.content.primaryLink.trim() ||
+    !isValidUrl(draft.content.primaryLink.trim()) ||
+    !isValidPhone(draft.content.clientPhone.trim());
 
   const mobilePreviewProps = useMemo(
     () => ({
@@ -626,16 +596,16 @@ export default function CreateProjectPage() {
       }
     : null;
 
-  const projectStepContent = (
+  const baseStepContent = (
     <section className="space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_20px_50px_rgba(13,32,24,0.35)] backdrop-blur">
       <header className="space-y-1">
-        <h2 className="text-lg font-semibold text-white">Projeto</h2>
-        <p className="text-sm text-white/70">Preencha os dados do projeto.</p>
+        <h2 className="text-lg font-semibold text-white">Base do projeto</h2>
+        <p className="text-sm text-white/70">Defina titulo e slug unico para o link.</p>
       </header>
 
       <div className="space-y-4">
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-white">Nome do projeto</span>
+          <span className="text-sm font-medium text-white">Titulo</span>
           <input
             type="text"
             value={draft.base.title}
@@ -649,85 +619,78 @@ export default function CreateProjectPage() {
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-white">Projeto pago?</span>
-          <select
-            aria-label="Projeto pago?"
-            value={draft.base.paid ? "sim" : "nao"}
-            onChange={(e) =>
-              updateDraft((current) => ({
-                ...current,
-                base: { ...current.base, paid: e.target.value === "sim" },
-              }))
-            }
-            className="w-full rounded-xl border border-white/25 bg-[#1b2433] px-4 py-3 text-sm text-white/90 transition focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#facc15] hover:border-white/40"
-          >
-            <option value="nao" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-              NÃ£o
-            </option>
-            <option value="sim" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-              Sim
-            </option>
-          </select>
-        </label>
-
-        <label className="block space-y-2">
-          <span className="text-sm font-medium text-white">Data de criaÃ§Ã£o</span>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-white">Slug</span>
+            <button
+              type="button"
+              onClick={handleGenerateSlug}
+              className="text-xs text-[#e2b23b] hover:underline"
+            >
+              Gerar automaticamente
+            </button>
+          </div>
           <input
-            type="date"
-            value={formatDateInput(draft.base.createdAt)}
-            readOnly
-            disabled
-            className="w-full cursor-not-allowed rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80"
+            type="text"
+            value={draft.base.slug}
+            onChange={(event) => handleSlugChange(event.target.value)}
+            onBlur={() => setSlugTouched(true)}
+            placeholder="landing-premium"
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
           />
-        </label>
-
-        <label className="block space-y-2">
-          <span className="text-sm font-medium text-white">Data de entrega</span>
-          <input
-            type="date"
-            value={draft.base.dueDate ?? ""}
-            onChange={(e) =>
-              updateDraft((current) => ({
-                ...current,
-                base: { ...current.base, dueDate: e.target.value || null },
-              }))
-            }
-            min={formatDateInput(draft.base.createdAt)}
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
-          />
-          {baseErrors.dueDate ? (
-            <span className="text-xs text-red-300">{baseErrors.dueDate}</span>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-white/60">
+            {slugStatus === "checking" ? <span>Validando disponiblidade...</span> : null}
+            {slugStatus === "available" ? <span className="text-green-300">Disponivel</span> : null}
+            {slugStatus === "unavailable" ? (
+              <span className="text-red-300">Slug em uso</span>
+            ) : null}
+            {slugStatus === "error" ? <span className="text-red-300">{slugMessage}</span> : null}
+            {slugSuggestion && slugStatus === "unavailable" ? (
+              <button
+                type="button"
+                onClick={() => handleSlugChange(slugSuggestion ?? "")}
+                className="text-[#e2b23b] hover:underline"
+              >
+                Usar sugestao: {slugSuggestion}
+              </button>
+            ) : null}
+          </div>
+          {baseErrors.slug && slugTouched ? (
+            <span className="text-xs text-red-300">{baseErrors.slug}</span>
           ) : null}
         </label>
+      </div>
+    </section>
+  );
 
+  const styleStepContent = (
+    <div className="space-y-6">
+      <HeaderEditor
+        value={draft.style.hero}
+        onChange={handleHeroChange}
+        onRequestRemoveBackground={handleRemoveBackground}
+        removingBackground={removeBgLoading}
+      />
+      <ButtonCanvasEditor items={draft.style.buttons} onChange={handleButtonsChange} />
+    </div>
+  );
+
+  const contentStepContent = (
+    <section className="space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_20px_50px_rgba(13,32,24,0.35)] backdrop-blur">
+      <header className="space-y-1">
+        <h2 className="text-lg font-semibold text-white">Conteudo adicional</h2>
+        <p className="text-sm text-white/70">
+          Dados que serao usados nos CTAs e informacoes do projeto.
+        </p>
+      </header>
+
+      <div className="space-y-4">
         <label className="block space-y-2">
           <span className="text-sm font-medium text-white">Nome do cliente</span>
           <input
             type="text"
-            value={draft.base.clientName}
-            onChange={(e) =>
-              updateDraft((current) => ({
-                ...current,
-                base: { ...current.base, clientName: e.target.value },
-              }))
-            }
+            value={draft.content.clientName}
+            onChange={(event) => handleContentChange("clientName", event.target.value)}
             placeholder="Cliente de exemplo"
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
-          />
-        </label>
-
-        <label className="block space-y-2">
-          <span className="text-sm font-medium text-white">Empresa</span>
-          <input
-            type="text"
-            value={draft.base.companyName}
-            onChange={(e) =>
-              updateDraft((current) => ({
-                ...current,
-                base: { ...current.base, companyName: e.target.value },
-              }))
-            }
-            placeholder="RazÃ£o social"
             className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
           />
         </label>
@@ -736,153 +699,38 @@ export default function CreateProjectPage() {
           <span className="text-sm font-medium text-white">Telefone</span>
           <input
             type="tel"
-            value={maskPhoneBR(draft.base.clientPhone)}
-            onChange={(e) =>
-              updateDraft((current) => ({
-                ...current,
-                base: { ...current.base, clientPhone: e.target.value },
-              }))
-            }
+            value={draft.content.clientPhone}
+            onChange={(event) => handleContentChange("clientPhone", event.target.value)}
             placeholder="(11) 99999-9999"
             className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
           />
-        </label>
-
-        <label className="block space-y-2">
-          <span className="text-sm font-medium text-white">WhatsApp</span>
-          <input
-            type="tel"
-            value={maskPhoneBR(draft.base.clientWhatsapp)}
-            onChange={(e) =>
-              updateDraft((current) => ({
-                ...current,
-                base: { ...current.base, clientWhatsapp: e.target.value },
-              }))
-            }
-            placeholder="(11) 99999-9999"
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
-          />
-        </label>
-
-        <label className="block space-y-2">
-          <span className="text-sm font-medium text-white">E-mail</span>
-          <input
-            type="email"
-            value={draft.base.clientEmail}
-            onChange={(e) =>
-              updateDraft((current) => ({
-                ...current,
-                base: { ...current.base, clientEmail: e.target.value },
-              }))
-            }
-            placeholder="cliente@dominio.com"
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
-          />
-          {baseErrors.clientEmail ? (
-            <span className="text-xs text-red-300">{baseErrors.clientEmail}</span>
+          {contentErrors.clientPhone ? (
+            <span className="text-xs text-red-300">{contentErrors.clientPhone}</span>
           ) : null}
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-white">Tipo de cliente</span>
-          <select
-            aria-label="Tipo de cliente"
-            value={draft.base.clientType}
-            onChange={(e) =>
-              updateDraft((current) => ({
-                ...current,
-                base: { ...current.base, clientType: e.target.value as any },
-              }))
-            }
-            className="w-full rounded-xl border border-white/25 bg-[#1b2433] px-4 py-3 text-sm text-white/90 transition focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#facc15] hover:border-white/40"
-          >
-            <option value="" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-              Selecione
-            </option>
-            <option value="pf" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-              Pessoa FÃ­sica
-            </option>
-            <option value="pj" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-              Empresa
-            </option>
-          </select>
-          {baseErrors.clientType ? (
-            <span className="text-xs text-red-300">{baseErrors.clientType}</span>
-          ) : null}
+          <span className="text-sm font-medium text-white">Link do botao principal</span>
+          <input
+            type="url"
+            value={draft.content.primaryLink}
+            onChange={(event) => handleContentChange("primaryLink", event.target.value)}
+            placeholder="https://"
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
+          />
+          {contentErrors.primaryLink ? (
+            <span className="text-xs text-red-300">{contentErrors.primaryLink}</span>
+          ) : (
+            <span className="text-xs text-white/50">
+              Obrigatorio. Esse link sera usado no CTA principal.
+            </span>
+          )}
         </label>
-
-        {draft.base.paid ? (
-          <>
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-white">Valor pago (R$)</span>
-              <input
-                type="number"
-                inputMode="decimal"
-                min={0}
-                step={0.01}
-                value={draft.base.amountPaid ?? 0}
-                onChange={(e) =>
-                  updateDraft((current) => ({
-                    ...current,
-                    base: { ...current.base, amountPaid: Number(e.target.value) },
-                  }))
-                }
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
-              />
-              {baseErrors.amountPaid ? (
-                <span className="text-xs text-red-300">{baseErrors.amountPaid}</span>
-              ) : null}
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-white">Forma de pagamento</span>
-              <select
-                aria-label="Forma de pagamento"
-                value={draft.base.paymentMethod ?? ""}
-                onChange={(e) =>
-                  updateDraft((current) => ({
-                    ...current,
-                    base: { ...current.base, paymentMethod: (e.target.value || null) as any },
-                  }))
-                }
-                className="w-full rounded-xl border border-white/25 bg-[#1b2433] px-4 py-3 text-sm text-white/90 transition focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#facc15] hover:border-white/40"
-              >
-                <option value="" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-                  Selecione
-                </option>
-                <option value="pix" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-                  Pix
-                </option>
-                <option value="cartao" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-                  CartÃ£o
-                </option>
-                <option value="boleto" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-                  Boleto
-                </option>
-                <option value="outro" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-                  Outro
-                </option>
-              </select>
-              {baseErrors.paymentMethod ? (
-                <span className="text-xs text-red-300">{baseErrors.paymentMethod}</span>
-              ) : null}
-            </label>
-          </>
-        ) : null}
       </div>
     </section>
   );
 
-  const styleStepContent = (
-    <div className="space-y-6">
-      <HeaderEditor value={draft.style.hero} onChange={handleHeroChange} />
-      <ButtonCanvasEditor items={draft.style.buttons} onChange={handleButtonsChange} />
-    </div>
-  );
-
-  // Content step removed per 3-steps flow
-
-  const publishStepContent = (
+  const reviewStepContent = (
     <ReviewPane
       draft={draft}
       slugAvailable={slugAvailable}
@@ -902,11 +750,13 @@ export default function CreateProjectPage() {
   );
 
   const currentPanel =
-    currentStep === "project"
-      ? projectStepContent
+    currentStep === "base"
+      ? baseStepContent
       : currentStep === "style"
         ? styleStepContent
-        : publishStepContent;
+        : currentStep === "content"
+          ? contentStepContent
+          : reviewStepContent;
 
   return (
     <div className="space-y-10">
@@ -932,12 +782,12 @@ export default function CreateProjectPage() {
         <div className="space-y-6">
           {currentPanel}
 
-          {currentStep !== "publish" ? (
+          {currentStep !== "review" ? (
             <div className="flex items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={goPrevious}
-                disabled={currentStep === "project"}
+                disabled={currentStep === "base"}
                 className="rounded-xl border border-white/15 bg-transparent px-4 py-2 text-sm text-white/70 transition hover:border-white/30 disabled:cursor-not-allowed disabled:border-white/5 disabled:text-white/30"
               >
                 Voltar
@@ -946,7 +796,10 @@ export default function CreateProjectPage() {
                 type="button"
                 onClick={goNext}
                 variant="primary"
-                disabled={currentStep === "project" && baseStepInvalid}
+                disabled={
+                  (currentStep === "base" && baseStepInvalid) ||
+                  (currentStep === "content" && contentStepInvalid)
+                }
               >
                 Avancar
               </Button>

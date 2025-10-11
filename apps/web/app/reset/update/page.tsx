@@ -18,11 +18,11 @@ const passwordSchema = z
   .object({
     password: z
       .string({ required_error: "Informe uma nova senha." })
-      .min(8, "Minimo de 8 caracteres."),
+      .min(8, "Mínimo de 8 caracteres."),
     confirmPassword: z.string({ required_error: "Confirme a nova senha." }),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "As senhas nao conferem.",
+    message: "As senhas não conferem.",
     path: ["confirmPassword"],
   });
 
@@ -108,14 +108,14 @@ export default function ResetUpdatePage() {
 
       setFieldErrors({});
       setValues({ password: "", confirmPassword: "" });
-      setSuccess("Senha redefinida com sucesso! Vamos levar voce ao painel.");
+      setSuccess("Senha redefinida com sucesso! Vamos levar você ao painel.");
       setTimeout(() => router.replace("/dashboard"), 800);
     } catch (caught) {
       const message =
         caught instanceof Error
           ? caught.message
-          : "Nao foi possivel atualizar sua senha no momento. Tente novamente.";
-      setError(message || "Nao foi possivel atualizar sua senha no momento.");
+          : "Não foi possível atualizar sua senha no momento. Tente novamente.";
+      setError(message || "Não foi possível atualizar sua senha no momento.");
     } finally {
       setIsSubmitting(false);
     }
@@ -125,7 +125,7 @@ export default function ResetUpdatePage() {
     <AuthLayout
       title="Defina uma nova senha"
       description="Escolha uma senha forte para manter sua conta protegida."
-      highlight="Recuperacao"
+      highlight="Recuperação"
       footer={
         <p>
           Precisa de ajuda?{" "}
@@ -155,7 +155,7 @@ export default function ResetUpdatePage() {
               required
             />
             <p id="reset-new-password-helper" className="text-xs text-white/50">
-              Utilize pelo menos 8 caracteres combinando letras, numeros e simbolos.
+              Utilize pelo menos 8 caracteres combinando letras, números e símbolos.
             </p>
             {fieldErrors.password ? (
               <p id="reset-new-password-error" className="text-xs font-medium text-red-300">

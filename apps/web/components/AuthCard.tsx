@@ -12,13 +12,13 @@ const AuthCard = () => {
       <div className="mb-6 flex flex-col items-center gap-4 text-center">
         <Image src="/logo-ano.png" alt="ANO Designer" width={64} height={64} priority />
         <div>
-          <h1 className="text-2xl font-semibold">Area protegida</h1>
+          <h1 className="text-2xl font-semibold">Área protegida</h1>
           <p className="mt-2 text-sm text-white/65">
-            Autenticacao Supabase em breve. Enquanto isso, este formulario e apenas um placeholder.
+            Autenticação Supabase em breve. Enquanto isso, este formulário é apenas um placeholder.
           </p>
         </div>
       </div>
-      <form className="flex flex-col gap-4" aria-label="Formulario de autenticacao">
+      <form className="flex flex-col gap-4" aria-label="Formulário de autenticação">
         <div className="space-y-2">
           <Label htmlFor="placeholder-email">E-mail</Label>
           <Input id="placeholder-email" type="email" placeholder="nome@empresa.com" disabled />
@@ -27,7 +27,7 @@ const AuthCard = () => {
           <Label htmlFor="placeholder-password">Senha</Label>
           <PasswordInput id="placeholder-password" placeholder="********" disabled />
         </div>
-        <Button type="button" disabled title="Integracao Supabase pendente">
+        <Button type="button" disabled title="Integração Supabase pendente">
           Entrar
         </Button>
       </form>

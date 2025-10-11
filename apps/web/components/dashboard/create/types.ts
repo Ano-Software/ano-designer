@@ -52,6 +52,17 @@ export type ProjectDraft = {
   base: {
     title: string;
     slug: string;
+    createdAt: string;
+    dueDate: string | null;
+    paid: boolean;
+    clientName: string;
+    companyName: string;
+    clientPhone: string;
+    clientWhatsapp: string;
+    clientEmail: string;
+    clientType: "pf" | "pj" | "";
+    amountPaid: number | null;
+    paymentMethod: "pix" | "cartao" | "boleto" | "outro" | null;
   };
   style: {
     hero: HeroSettings;
@@ -96,6 +107,17 @@ export const defaultProjectDraft: ProjectDraft = {
   base: {
     title: "",
     slug: "",
+    createdAt: new Date().toISOString(),
+    dueDate: null,
+    paid: false,
+    clientName: "",
+    companyName: "",
+    clientPhone: "",
+    clientWhatsapp: "",
+    clientEmail: "",
+    clientType: "",
+    amountPaid: null,
+    paymentMethod: null,
   },
   style: {
     hero: { ...defaultHeroSettings },

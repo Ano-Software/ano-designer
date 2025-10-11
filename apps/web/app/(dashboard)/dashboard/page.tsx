@@ -171,7 +171,7 @@ export default async function DashboardPage() {
     {
       title: "Projetos pendentes",
       value: formatNumber(metrics?.pendingProjects ?? 0),
-      description: "Projetos iniciados e ainda nao finalizados.",
+      description: "Projetos iniciados e ainda não finalizados.",
     },
   ];
 

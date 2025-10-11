@@ -204,7 +204,7 @@ export function PlansView({ configError, profile, subscription }: PlansViewProps
       await navigator.clipboard.writeText(code);
       setToast?.({ type: "success", message: "Codigo copiado." });
     } catch (error) {
-      setToast?.({ type: "error", message: "Nao foi possivel copiar o codigo." });
+      setToast?.({ type: "error", message: "Não foi possível copiar o código." });
     }
   };
 
@@ -429,7 +429,7 @@ export function PlansView({ configError, profile, subscription }: PlansViewProps
           </p>
           <p>
             <strong className="text-white">Recorrente:</strong> o pagamento e feito automaticamente
-            no cartao de credito. Alem da praticidade de nao precisar lembrar todo mes, o valor e
+            no cartão de crédito. Além da praticidade de não precisar lembrar todo mês, o valor é
             reduzido. E a opcao mais vantajosa para quem ja decidiu usar o sistema no dia a dia.
           </p>
           <p className="text-white">

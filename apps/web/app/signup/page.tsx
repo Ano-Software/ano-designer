@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
@@ -17,19 +17,19 @@ import { createSupabaseBrowserClient } from "@/lib/supabase-client";
 const signupSchema = z
   .object({
     username: z
-      .string({ required_error: "Informe um nome de usuario." })
-      .min(3, "Minimo de 3 caracteres.")
-      .regex(/^[a-z0-9_.-]+$/i, "Use apenas letras, numeros ou . _ -"),
+      .string({ required_error: "Informe um nome de usuário." })
+      .min(3, "Mínimo de 3 caracteres.")
+      .regex(/^[a-z0-9_.-]+$/i, "Use apenas letras, números ou . _ -"),
     email: z
       .string({ required_error: "Informe seu e-mail corporativo." })
-      .email("Informe um e-mail valido."),
+      .email("Informe um e-mail válido."),
     password: z
       .string({ required_error: "Crie uma senha." })
       .min(8, "A senha precisa ter pelo menos 8 caracteres."),
     confirmPassword: z.string({ required_error: "Confirme a senha." }),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "As senhas nao conferem.",
+    message: "As senhas não conferem.",
     path: ["confirmPassword"],
   });
 
@@ -103,15 +103,15 @@ export default function SignupPage() {
         throw signUpError;
       }
 
-      setSuccess("Cadastro realizado! Enviamos um e-mail de confirmacao para voce continuar.");
+      setSuccess("Cadastro realizado! Enviamos um e-mail de confirmação para você continuar.");
       setValues({ username: "", email: "", password: "", confirmPassword: "" });
       setFieldErrors({});
     } catch (caught) {
       const message =
         caught instanceof Error
           ? caught.message
-          : "Nao foi possivel concluir seu cadastro. Tente novamente em instantes.";
-      setError(message || "Nao foi possivel concluir seu cadastro.");
+          : "Não foi possível concluir seu cadastro. Tente novamente em instantes.";
+      setError(message || "Não foi possível concluir seu cadastro.");
     } finally {
       setIsSubmitting(false);
     }
@@ -121,10 +121,10 @@ export default function SignupPage() {
     <AuthLayout
       title="Crie sua conta"
       description=""
-      highlight="Cadastre-se grÃ¡tis"
+      highlight="Cadastre-se grátis"
       footer={
         <p>
-          Ja possui conta?{" "}
+          Já possui conta?{" "}
           <Link className="font-semibold text-[#e2b23b] hover:underline" href="/login">
             Fazer login
           </Link>
@@ -136,7 +136,7 @@ export default function SignupPage() {
 
         <form className="space-y-5" onSubmit={handleSubmit} noValidate>
           <div className="space-y-2">
-            <Label htmlFor="signup-username">Nome de usuario</Label>
+            <Label htmlFor="signup-username">Nome de usuário</Label>
             <Input
               id="signup-username"
               autoComplete="username"
@@ -151,7 +151,7 @@ export default function SignupPage() {
               required
             />
             <p id="signup-username-helper" className="text-xs text-white/50">
-              Use letras, numeros, ponto, traco ou underline.
+              Use letras, números, ponto, traço ou underline.
             </p>
             {fieldErrors.username ? (
               <p id="signup-username-error" className="text-xs font-medium text-red-300">
@@ -167,7 +167,7 @@ export default function SignupPage() {
               type="email"
               inputMode="email"
               autoComplete="email"
-              placeholder="voce@empresa.com"
+              placeholder="você@empresa.com"
               value={values.email}
               onChange={handleInputChange("email")}
               error={fieldErrors.email}
@@ -198,7 +198,7 @@ export default function SignupPage() {
               required
             />
             <p id="signup-password-helper" className="text-xs text-white/50">
-              Minimo de 8 caracteres, combine letras, numeros e simbolos.
+              Mínimo de 8 caracteres, combine letras, números e símbolos.
             </p>
             {fieldErrors.password ? (
               <p id="signup-password-error" className="text-xs font-medium text-red-300">

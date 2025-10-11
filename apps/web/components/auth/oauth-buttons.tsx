@@ -46,10 +46,16 @@ type OAuthButtonsProps = {
   onSignIn?: (provider: Provider) => Promise<void> | void;
   disabled?: boolean;
   className?: string;
+  providers?: Provider[];
 };
 
-const OAuthButtons = ({ onSignIn, disabled, className }: OAuthButtonsProps) => {
+const OAuthButtons = ({ onSignIn, disabled, className, providers }: OAuthButtonsProps) => {
   const [loading, setLoading] = React.useState<Provider | null>(null);
+  const list: Provider[] = React.useMemo(
+    () =>
+      providers && providers.length > 0 ? providers : (Object.keys(providerConfig) as Provider[]),
+    [providers]
+  );
 
   const handleClick = async (provider: Provider) => {
     if (disabled || loading) return;
@@ -64,7 +70,7 @@ const OAuthButtons = ({ onSignIn, disabled, className }: OAuthButtonsProps) => {
   return (
     <div className={className}>
       <div className="grid gap-3">
-        {(Object.keys(providerConfig) as Provider[]).map((provider) => {
+        {list.map((provider) => {
           const config = providerConfig[provider];
           const isLoading = loading === provider;
 

@@ -17,22 +17,28 @@ import SupabaseConfigWarning, {
 import { createSupabaseBrowserClient } from "@/lib/supabase-client";
 
 const loginSchema = z.object({
-  email: z
-    .string({ required_error: "Informe seu e-mail." })
-    .min(1, "Informe seu e-mail.")
-    .email("Informe um e-mail valido."),
+  identifier: z
+    .string({ required_error: "Informe seu e-mail ou usuário." })
+    .min(1, "Informe seu e-mail ou usuário."),
   password: z.string({ required_error: "Informe sua senha." }).min(1, "Informe sua senha."),
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
 type FieldErrors = Partial<Record<keyof LoginValues, string>>;
+type ResolveIdentifierResponse =
+  | { data: { email: string }; error: null }
+  | { data: null; error: { message?: string; code?: string } | null };
+
+const DEFAULT_LOGIN_ERROR_MESSAGE =
+  "Não foi possível acessar sua conta. Verifique os dados informados.";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? null;
 
 export default function LoginPage() {
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const supabaseUnavailable = supabase === null;
 
-  const [values, setValues] = useState<LoginValues>({ email: "", password: "" });
+  const [values, setValues] = useState<LoginValues>({ identifier: "", password: "" });
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -73,7 +79,49 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword(result.data);
+      const resolveResponse = await fetch("/api/auth/resolve-identifier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: result.data.identifier }),
+      });
+
+      let email: string | null = null;
+
+      try {
+        const payload = (await resolveResponse.json()) as ResolveIdentifierResponse;
+
+        if (resolveResponse.ok && payload?.data?.email) {
+          email = payload.data.email;
+        } else {
+          const code = payload?.error?.code;
+
+          if (code === "IDENTIFIER_REQUIRED") {
+            setFieldErrors((prev) => ({
+              ...prev,
+              identifier: "Informe seu e-mail ou usuário.",
+            }));
+          } else if (code === "USER_NOT_FOUND") {
+            setError("Não encontramos nenhuma conta com esse identificador.");
+          } else {
+            setError(payload?.error?.message ?? DEFAULT_LOGIN_ERROR_MESSAGE);
+          }
+
+          return;
+        }
+      } catch {
+        setError(DEFAULT_LOGIN_ERROR_MESSAGE);
+        return;
+      }
+
+      if (!email) {
+        setError(DEFAULT_LOGIN_ERROR_MESSAGE);
+        return;
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: result.data.password,
+      });
 
       if (signInError) {
         throw signInError;
@@ -85,11 +133,8 @@ export default function LoginPage() {
         router.replace("/dashboard");
       }, 600);
     } catch (caught) {
-      const message =
-        caught instanceof Error
-          ? caught.message
-          : "Nao foi possivel acessar sua conta. Verifique os dados informados.";
-      setError(message || "Nao foi possivel acessar sua conta.");
+      const message = caught instanceof Error ? caught.message : DEFAULT_LOGIN_ERROR_MESSAGE;
+      setError(message || DEFAULT_LOGIN_ERROR_MESSAGE);
     } finally {
       setIsSubmitting(false);
     }
@@ -106,8 +151,9 @@ export default function LoginPage() {
       setSuccess(null);
 
       try {
-        const redirectTo =
-          typeof window === "undefined" ? undefined : `${window.location.origin}/auth/callback`;
+        const redirectBase =
+          typeof window === "undefined" ? SITE_URL : (SITE_URL ?? window.location.origin);
+        const redirectTo = redirectBase ? `${redirectBase}/auth/callback` : undefined;
         const { error: oauthError } = await supabase.auth.signInWithOAuth({
           provider,
           options: {
@@ -122,8 +168,8 @@ export default function LoginPage() {
         const message =
           caught instanceof Error
             ? caught.message
-            : "Nao foi possivel iniciar o fluxo de autenticacao social.";
-        setError(message || "Nao foi possivel iniciar o fluxo de autenticacao social.");
+            : "Não foi possível iniciar o fluxo de autenticação social.";
+        setError(message || "Não foi possível iniciar o fluxo de autenticação social.");
       }
     },
     [supabase]
@@ -143,7 +189,7 @@ export default function LoginPage() {
             </Link>
           </p>
           <p>
-            Nao possui uma conta?{" "}
+            Não possui uma conta?{" "}
             <Link className="font-semibold text-[#e2b23b] hover:underline" href="/signup">
               Criar conta
             </Link>
@@ -156,23 +202,22 @@ export default function LoginPage() {
 
         <form className="space-y-5" onSubmit={handleSubmit} noValidate>
           <div className="space-y-2">
-            <Label htmlFor="login-email">E-mail</Label>
+            <Label htmlFor="login-identifier">E-mail ou usuário</Label>
             <Input
-              id="login-email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder="nome@empresa.com"
-              value={values.email}
-              onChange={handleInputChange("email")}
-              error={fieldErrors.email}
+              id="login-identifier"
+              type="text"
+              autoComplete="username"
+              placeholder={"nome@empresa.com\n ou seu_usuario"}
+              value={values.identifier}
+              onChange={handleInputChange("identifier")}
+              error={fieldErrors.identifier}
               disabled={isSubmitting || supabaseUnavailable}
-              aria-describedby={fieldErrors.email ? "login-email-error" : undefined}
+              aria-describedby={fieldErrors.identifier ? "login-identifier-error" : undefined}
               required
             />
-            {fieldErrors.email ? (
-              <p id="login-email-error" className="text-xs font-medium text-red-300">
-                {fieldErrors.email}
+            {fieldErrors.identifier ? (
+              <p id="login-identifier-error" className="text-xs font-medium text-red-300">
+                {fieldErrors.identifier}
               </p>
             ) : null}
           </div>
@@ -219,6 +264,7 @@ export default function LoginPage() {
           <OAuthButtons
             onSignIn={handleOAuthSignIn}
             disabled={isSubmitting || supabaseUnavailable}
+            providers={["google"]}
           />
         </div>
       </div>

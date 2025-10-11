@@ -1,12 +1,14 @@
 "use client";
 
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Button from "@/components/Button";
-import { cn } from "@/lib/cn";
-import type { ButtonCanvasItem, HeroSettings, ProjectDraft } from "./types";
+import { apiClient } from "@/lib/api-client";
+import type { ProjectDraft } from "./types";
 
 type ReviewPaneProps = {
   draft: ProjectDraft;
   slugAvailable: boolean;
+  onUpdatePublicName?: (value: string) => void;
   plan: {
     planId: string | null;
     active: boolean;
@@ -41,107 +43,10 @@ function formatTimestamp(timestamp: number | null) {
   return formatter.format(new Date(timestamp));
 }
 
-function SummarySection({ title, items }: { title: string; items: string[] }) {
-  return (
-    <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
-      <h3 className="text-sm font-semibold text-white">{title}</h3>
-      <ul className="mt-3 space-y-2 text-sm text-white/70">
-        {items.map((item, index) => (
-          <li key={index} className="flex items-start gap-2">
-            <span aria-hidden className="mt-1 inline-block h-2 w-2 rounded-full bg-[#e2b23b]" />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function describeHero(hero: HeroSettings, baseTitle: string) {
-  const heading = hero.heading.trim() || baseTitle || "Sem titulo";
-  const parts: string[] = [`Titulo: ${heading}`];
-  const headerHeight = Math.round(hero.headerHeight ?? 320);
-  const gradientAngle = Math.round(hero.gradientAngle ?? 45);
-  const hasSubheading = hero.subheading.trim().length > 0;
-
-  if (hasSubheading) {
-    parts.push(`Subtitulo: ${hero.subheading.trim()}`);
-  }
-
-  parts.push(`Altura: ${headerHeight}px`);
-
-  if (hero.backgroundKind === "color") {
-    parts.push(`Fundo cor: ${hero.backgroundColor}`);
-  } else {
-    parts.push(`Fundo gradiente: ${hero.gradientFrom} -> ${hero.gradientTo} (${gradientAngle}deg)`);
-  }
-
-  parts.push(`Alinhamento: ${hero.alignment}`);
-  parts.push(`Cor titulo: ${hero.titleColor}`);
-
-  if (hasSubheading) {
-    parts.push(`Cor subtitulo: ${hero.subtitleColor}`);
-  }
-
-  parts.push(`Fontes: titulo ${hero.titleFont}, subtitulo ${hero.subtitleFont}`);
-  parts.push(`Auto remover fundo: ${hero.autoRemoveBackground ? "sim" : "nao"}`);
-  parts.push(`Otimizar imagem: ${hero.autoOptimizeImage ? "sim" : "nao"}`);
-
-  if (hero.coverImage) {
-    const alignment =
-      hero.coverImagePosition === "left"
-        ? "esquerda"
-        : hero.coverImagePosition === "right"
-          ? "direita"
-          : "centro";
-    const status = hero.coverImage.backgroundRemoved ? "fundo limpo" : "original";
-    parts.push(`Imagem (${status}) alinhada a ${alignment}`);
-  }
-
-  return parts;
-}
-function describeButtons(buttons: ButtonCanvasItem[]) {
-  if (buttons.length === 0) {
-    return ["Nenhum botao configurado."];
-  }
-
-  return buttons.map((button, index) => {
-    const extras = [] as string[];
-    extras.push(`estilo ${button.style}`);
-    extras.push(`texto ${button.textColor}`);
-    extras.push(`fundo ${button.backgroundColor}`);
-    if (button.style === "gradient" && button.secondaryColor) {
-      extras.push(`gradiente ate ${button.secondaryColor}`);
-    }
-    if (button.icon) {
-      extras.push(`icone ${button.icon}`);
-    }
-    if (button.image) {
-      extras.push("imagem anexa");
-    }
-    return `Botao ${index + 1}: ${button.label || "sem label"} (${extras.join(", ")})`;
-  });
-}
-
-function describeContent(draft: ProjectDraft) {
-  const items: string[] = [];
-  items.push(`Titulo base: ${draft.base.title || "sem titulo"}`);
-  items.push(`Slug: ${draft.base.slug || "sem slug"}`);
-  if (draft.content.clientName) {
-    items.push(`Cliente: ${draft.content.clientName}`);
-  }
-  if (draft.content.clientPhone) {
-    items.push(`Telefone: ${draft.content.clientPhone}`);
-  }
-  if (draft.content.primaryLink) {
-    items.push(`Link principal: ${draft.content.primaryLink}`);
-  }
-  return items;
-}
-
 export function ReviewPane({
   draft,
   slugAvailable,
+  onUpdatePublicName,
   plan,
   onSaveDraft,
   onPublish,
@@ -155,31 +60,112 @@ export function ReviewPane({
   limitMessage,
   lastSavedAt,
 }: ReviewPaneProps) {
-  const heroSummary = describeHero(draft.style.hero, draft.base.title);
-  const buttonSummary = describeButtons(draft.style.buttons);
-  const contentSummary = describeContent(draft);
+  // Link público: estado e validação
+  const [linkName, setLinkName] = useState<string>(() => draft?.base?.slug ?? "");
+  const [linkStatus, setLinkStatus] = useState<"idle" | "checking" | "available" | "unavailable">(
+    "idle"
+  );
+  const [linkMessage, setLinkMessage] = useState<string | null>(null);
+  const timerRef = useRef<number | null>(null);
+  const NAME_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const validateLocally = useCallback((value: string) => {
+    const v = value.trim().toLowerCase();
+    if (v.length < 3 || v.length > 60 || !NAME_REGEX.test(v)) {
+      setLinkStatus("unavailable");
+      setLinkMessage("Nome inválido.");
+      return false;
+    }
+    setLinkStatus("checking");
+    setLinkMessage(null);
+    return true;
+  }, []);
+
+  const triggerCheck = useCallback(
+    (value: string) => {
+      clearTimer();
+      const ok = validateLocally(value);
+      if (!ok) return;
+      const normalized = value.trim().toLowerCase();
+      timerRef.current = window.setTimeout(async () => {
+        try {
+          const res = await apiClient.checkProjectSlugAvailability(normalized);
+          const available = Boolean(res.data?.available);
+          setLinkStatus(available ? "available" : "unavailable");
+          setLinkMessage(available ? null : "Indisponível.");
+        } catch {
+          setLinkStatus("unavailable");
+          setLinkMessage("Falha ao validar.");
+        }
+      }, 400) as unknown as number;
+    },
+    [clearTimer, validateLocally]
+  );
+
+  useEffect(() => {
+    setLinkName(draft?.base?.slug ?? "");
+    if (draft?.base?.slug) triggerCheck(draft.base.slug);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const planLabel = plan?.planName ?? plan?.planId ?? "Plano desconhecido";
   const limitInfo = plan
     ? plan.limit === null
       ? "Sem limite definido"
-      : `${plan.used}/${plan.limit} publicacoes no mes`
-    : "Plano nao carregado";
+      : `${plan.used}/${plan.limit} publicações no mês`
+    : "Plano não carregado";
   const publishCtaLabel = hasPublishAccess ? "Publicar" : "Contratar plano";
+  const baseValid = (() => {
+    const title = draft?.base?.title?.trim?.() ?? "";
+    const slug = draft?.base?.slug?.trim?.() ?? "";
+    return title.length >= 3 && title.length <= 120 && slug.length >= 3;
+  })();
 
   return (
     <section className="space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_20px_50px_rgba(13,32,24,0.35)] backdrop-blur">
       <header className="space-y-1">
-        <h2 className="text-lg font-semibold text-white">Revisao final</h2>
-        <p className="text-sm text-white/70">Confirme dados, plano e limites antes de publicar.</p>
+        <h2 className="text-lg font-semibold text-white">Publicar</h2>
         <p className="text-xs text-white/50">Auto save local: {formatTimestamp(lastSavedAt)}</p>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <SummarySection title="Hero" items={heroSummary} />
-        <SummarySection title="Botoes" items={buttonSummary} />
-        <SummarySection title="Conteudo" items={contentSummary} />
-      </div>
+      <section className="space-y-3 rounded-2xl border border-white/10 bg-black/40 p-4 text-sm">
+        <p className="font-semibold text-white">Link do projeto</p>
+        <div className="flex items-center gap-2">
+          <span className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/70">
+            anoig.com/
+          </span>
+          <input
+            type="text"
+            aria-label="Nome do link público"
+            value={linkName}
+            onChange={(e) => {
+              const v = e.target.value.toLowerCase();
+              setLinkName(v);
+              onUpdatePublicName?.(v);
+              triggerCheck(v);
+            }}
+            placeholder="meu-projeto"
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
+          />
+        </div>
+        <div className="text-xs">
+          {linkStatus === "checking" ? (
+            <span className="text-white/60">Validando…</span>
+          ) : linkStatus === "available" ? (
+            <span className="text-green-300">Disponível</span>
+          ) : linkStatus === "unavailable" ? (
+            <span className="text-red-300">{linkMessage ?? "Indisponível"}</span>
+          ) : null}
+        </div>
+      </section>
+
+      {/* Summary cards removed intentionally (Hero, Botoes, Conteudo) */}
 
       <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/80">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -189,8 +175,8 @@ export function ReviewPane({
             <p className="text-xs text-white/60">{limitInfo}</p>
           </div>
           <div className="text-right text-xs text-white/60">
-            <p>Slug disponivel: {slugAvailable ? "sim" : "nao"}</p>
-            <p>Plano ativo: {plan?.active ? "sim" : "nao"}</p>
+            <p>Slug disponível: {slugAvailable ? "sim" : "não"}</p>
+            <p>Plano ativo: {plan?.active ? "sim" : "não"}</p>
           </div>
         </div>
 
@@ -217,7 +203,9 @@ export function ReviewPane({
             onClick={hasPublishAccess ? onPublish : onUpgrade}
             isLoading={publishing && hasPublishAccess}
             variant={hasPublishAccess ? "primary" : "outline"}
-            disabled={hasPublishAccess ? publishing || limitExceeded || !slugAvailable : false}
+            disabled={
+              hasPublishAccess ? publishing || limitExceeded || !slugAvailable || !baseValid : false
+            }
           >
             {publishCtaLabel}
           </Button>
