@@ -24,7 +24,7 @@ export function useCoursesResources() {
       const message =
         unknownError instanceof ApiClientError
           ? unknownError.message
-          : "Nao foi possivel carregar os cursos.";
+          : "Não foi possível carregar os cursos.";
       setError(message);
     } finally {
       setLoading(false);

@@ -6,7 +6,7 @@ export async function removeBackground(imageDataUrl: string): Promise<string> {
   const client = createSupabaseBrowserClient();
 
   if (!client) {
-    throw new Error("Supabase nao configurado. Configure SUPABASE_URL e SUPABASE_ANON_KEY.");
+    throw new Error("Supabase não configurado. Configure SUPABASE_URL e SUPABASE_ANON_KEY.");
   }
 
   const { data, error } = await client.functions.invoke("remove-background", {
