@@ -184,7 +184,7 @@ function Stepper({
               type="button"
               onClick={() => onSelect(step.key)}
               className={cn(
-                "flex w-full flex-col rounded-2xl border px-4 py-3 text-left transition",
+                "flex w-full flex-col rounded-2xl border px-5 py-4 md:px-6 md:py-5 text-left transition",
                 status === "active"
                   ? "border-[#e2b23b] bg-[#e2b23b]/20 text-[#e2b23b]"
                   : status === "done"
@@ -192,10 +192,7 @@ function Stepper({
                     : "border-white/10 bg-white/5 text-white/60 hover:border-white/20"
               )}
             >
-              {step.key !== "project" ? (
-                <span className="text-xs uppercase tracking-[0.3em]">{`0${index + 1}`}</span>
-              ) : null}
-              <span className="text-sm font-semibold">{step.title}</span>
+              <span className="text-base md:text-lg font-semibold">{step.title}</span>
             </button>
           </li>
         );
