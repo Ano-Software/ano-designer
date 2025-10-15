@@ -1,0 +1,204 @@
+{
+  "info": {
+    "name": "Ano Designer API v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0",
+    "description": "Postman collection for Ano Designer API v1 endpoints. Use Supabase auth cookies in the Postman session."
+  },
+  "item": [
+    {
+      "name": "Auth / Session",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/session",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "session"]
+        }
+      }
+    },
+    {
+      "name": "Users / Me / Get",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users", "me"]
+        }
+      }
+    },
+    {
+      "name": "Users / Me / Update",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"Ana Designer\",\n  \"username\": \"anadesigner\",\n  \"bio\": \"Designer lead at Ano Studio\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/users/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "users", "me"]
+        }
+      }
+    },
+    {
+      "name": "Projects / List",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/projects?page=1\u0026pageSize=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "projects"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "pageSize",
+              "value": "10"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Projects / Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Site institucional\",\n  \"description\": \"Landing page responsiva\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/projects",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "projects"]
+        }
+      }
+    },
+    {
+      "name": "Projects / Get",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "projects", "{{projectId}}"]
+        }
+      }
+    },
+    {
+      "name": "Projects / Patch",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description\": \"Atualizado com briefing final\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "projects", "{{projectId}}"]
+        }
+      }
+    },
+    {
+      "name": "Projects / Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "projects", "{{projectId}}"]
+        }
+      }
+    },
+    {
+      "name": "Analytics / Metrics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/analytics/metrics?month=2025-01",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "analytics", "metrics"],
+          "query": [
+            {
+              "key": "month",
+              "value": "2025-01"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Billing / Subscription",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/billing/subscription",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "billing", "subscription"]
+        }
+      }
+    },
+    {
+      "name": "Billing / Create Checkout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"planId\": \"plan_b\",\n  \"mode\": \"recurring\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/billing/create-checkout",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "billing", "create-checkout"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "projectId",
+      "value": "00000000-0000-0000-0000-000000000000"
+    }
+  ]
+}

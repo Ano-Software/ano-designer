@@ -1,0 +1,30 @@
+
+> dev
+> next dev -p 3000
+
+  ▲ Next.js 14.2.33
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 4.2s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 627ms (210 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 3.8s (849 modules)
+ GET /login 200 in 4200ms
+ GET /login 200 in 42ms
+ GET /login 200 in 42ms
+ GET /login 200 in 44ms
+ ○ Compiling /signup ...
+ ✓ Compiled /signup in 732ms (855 modules)
+ GET /login 200 in 179ms
+ GET /login 200 in 25ms
+ ✓ Compiled /reset-password in 385ms (847 modules)
+ GET /login 200 in 74ms
+ GET /login 200 in 33ms
+ GET /login 200 in 40ms
+ GET /login 200 in 60ms
+ GET /login 200 in 71ms
+ GET /login 200 in 47ms
+ GET /login 200 in 43ms
