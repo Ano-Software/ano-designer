@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getAdminEnv } from "@/lib/env-server";
 import { signSession } from "@/lib/session";
@@ -46,26 +46,29 @@ export async function POST(req: NextRequest) {
 
     if (!username || !password) {
       current.count++;
-      return NextResponse.json({ message: "Usuário ou senha inválidos." }, { status: 401 });
+      return NextResponse.json({ message: "UsuÃ¡rio ou senha invÃ¡lidos." }, { status: 401 });
     }
 
     if (username !== env.username) {
       current.count++;
-      return NextResponse.json({ message: "Usuário ou senha inválidos." }, { status: 401 });
+      return NextResponse.json({ message: "UsuÃ¡rio ou senha invÃ¡lidos." }, { status: 401 });
     }
 
     const ok = await bcrypt.compare(password, env.passwordHash);
     if (!ok) {
       current.count++;
-      return NextResponse.json({ message: "Usuário ou senha inválidos." }, { status: 401 });
+      return NextResponse.json({ message: "UsuÃ¡rio ou senha invÃ¡lidos." }, { status: 401 });
     }
 
-    // success → reset attempts for IP
+    // success â†’ reset attempts for IP
     attempts.delete(ip);
 
     const iat = Math.floor(Date.now() / 1000);
     const exp = iat + 7 * 24 * 60 * 60; // 7 days
-    const token = signSession({ sub: env.username, role: "admin", iat, exp }, env.sessionSecret);
+    const token = await signSession(
+      { sub: env.username, role: "admin", iat, exp },
+      env.sessionSecret
+    );
 
     const res = NextResponse.redirect(new URL("/", req.url), 303);
     // __Host- cookie: Secure, Path=/, no Domain

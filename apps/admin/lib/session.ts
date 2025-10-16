@@ -1,34 +1,53 @@
-import crypto from "node:crypto";
-
-export type AdminSession = {
+﻿export type AdminSession = {
   sub: string; // username
   role: "admin";
   iat: number; // seconds
   exp: number; // seconds
 };
 
-function b64url(input: Buffer | string): string {
-  const buf = Buffer.isBuffer(input) ? input : Buffer.from(input);
+function b64url(input: Buffer | string | ArrayBuffer): string {
+  const buf = Buffer.isBuffer(input)
+    ? input
+    : input instanceof ArrayBuffer
+      ? Buffer.from(new Uint8Array(input))
+      : Buffer.from(input);
   return buf.toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 }
 
-function hmacSHA256(secret: string, data: string): string {
-  const mac = crypto.createHmac("sha256", secret).update(data).digest();
-  return b64url(mac);
+async function hmacSHA256(secret: string, data: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(data));
+  return b64url(sig);
 }
 
-export function signSession(payload: AdminSession, secret: string): string {
+export async function signSession(payload: AdminSession, secret: string): Promise<string> {
   const body = b64url(JSON.stringify(payload));
-  const sig = hmacSHA256(secret, body);
+  const sig = await hmacSHA256(secret, body);
   return `${body}.${sig}`;
 }
 
-export function verifySession(token: string, secret: string): AdminSession | null {
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+export async function verifySession(token: string, secret: string): Promise<AdminSession | null> {
   const parts = token.split(".");
   if (parts.length !== 2) return null;
   const [body, sig] = parts;
-  const expected = hmacSHA256(secret, body);
-  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
+  const expected = await hmacSHA256(secret, body);
+  if (!timingSafeEqual(sig, expected)) {
     return null;
   }
   try {
