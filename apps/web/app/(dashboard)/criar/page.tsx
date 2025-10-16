@@ -970,7 +970,7 @@ export default function CreateProjectPage() {
           ) : null}
         </div>
 
-        <div className="xl:pl-4 xl:self-start xl:h-fit">
+        <div className="xl:pl-4 xl:self-start xl:sticky xl:top-24 xl:h-fit">
           <MobilePreview {...mobilePreviewProps} />
         </div>
       </div>
