@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 import { getPublicSupabaseConfig } from "@/lib/env";
 
-const PUBLIC_ROUTES = new Set(["/login", "/auth/callback"]);
+const PUBLIC_ROUTES = new Set(["/login", "/auth/callback", "/403"]);
 const PUBLIC_PREFIX = ["/api", "/_next", "/favicon", "/icons", "/public"];
 const STATIC_EXT = new Set([".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp", ".avif"]);
 
@@ -41,7 +41,7 @@ export async function middleware(req: NextRequest) {
 
   const role = (session.user.user_metadata as Record<string, unknown> | undefined)?.role;
   if (role !== "admin") {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(new URL("/403", req.url));
   }
 
   return res;
