@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
-import { getPublicSupabaseConfig } from "@/lib/env";
+import { verifySession } from "@/lib/session";
+import { getAdminEnv } from "@/lib/env-server";
 
 // Rotas explicitamente públicas (passam sem check)
 const PUBLIC_ROUTES = new Set([
@@ -22,33 +22,23 @@ export async function middleware(req: NextRequest) {
   }
 
   try {
-    const res = NextResponse.next();
-    const config = getPublicSupabaseConfig();
-
-    // Sem config/env: redireciona para login (307)
-    if (!config) {
+    const env = getAdminEnv();
+    if (!env) {
       return NextResponse.redirect(new URL("/login", req.url), 307);
     }
 
-    // Autenticação via cookies do request; sem service role
-    const supabase = createMiddlewareClient({ req, res }, config);
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    // Sem sessão → /login (307)
-    if (!session) {
+    // Lê cookie de sessão e verifica assinatura/expiração
+    const raw =
+      req.cookies.get("__Host-admin_session")?.value || req.cookies.get("admin_session")?.value;
+    if (!raw) {
+      return NextResponse.redirect(new URL("/login", req.url), 307);
+    }
+    const session = verifySession(raw, env.sessionSecret);
+    if (!session || session.role !== "admin") {
       return NextResponse.redirect(new URL("/login", req.url), 307);
     }
 
-    // Com sessão mas sem role admin → /403 (307)
-    const role = (session.user.user_metadata as Record<string, unknown> | undefined)?.role;
-    if (role !== "admin") {
-      return NextResponse.redirect(new URL("/403", req.url), 307);
-    }
-
-    // Ok
-    return res;
+    return NextResponse.next();
   } catch {
     // Qualquer erro → evitar 500 e mandar para login (307)
     return NextResponse.redirect(new URL("/login", req.url), 307);
