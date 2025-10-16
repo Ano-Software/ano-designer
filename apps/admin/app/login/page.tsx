@@ -1,45 +1,36 @@
-"use client";
+﻿"use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import type { PublicSupabaseConfig } from "@/lib/env";
-import { getPublicSupabaseConfig } from "@/lib/env";
+import { useState } from "react";
 
 export default function LoginPage() {
-  const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [config, setConfig] = useState<PublicSupabaseConfig | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    setConfig(getPublicSupabaseConfig());
-    setReady(true);
-  }, []);
-
-  const signInWithGoogle = useCallback(async () => {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
     try {
-      const supabase = createClientComponentClient();
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: typeof window !== "undefined" ? `${window.location.origin}` : undefined,
-        },
+      const form = e.currentTarget;
+      const formData = new FormData(form);
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        body: formData,
       });
-      if (error) {
-        setError(error.message);
+      if (res.redirected) {
+        window.location.href = res.url;
+        return;
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Falha ao autenticar.");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ message: "Usuário ou senha inválidos." }));
+        setError(typeof data?.message === "string" ? data.message : "Usuário ou senha inválidos.");
+      }
+    } catch {
+      setError("Tente novamente em alguns segundos.");
+    } finally {
+      setSubmitting(false);
     }
-  }, []);
-
-  const signOut = useCallback(async () => {
-    try {
-      const supabase = createClientComponentClient();
-      await supabase.auth.signOut();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Falha ao sair.");
-    }
-  }, []);
+  }
 
   return (
     <div
@@ -69,17 +60,58 @@ export default function LoginPage() {
           </p>
         </header>
 
-        {!ready ? (
-          <p style={{ color: "rgba(255,255,255,0.6)" }}>Carregando…</p>
-        ) : !config ? (
-          <p style={{ fontSize: 14, color: "#fecaca" }}>
-            Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY.
-          </p>
-        ) : (
-          <div style={{ display: "grid", gap: 12 }}>
+        <form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }} noValidate>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", fontWeight: 600 }}>
+              Usuário
+            </span>
+            <input
+              type="text"
+              name="username"
+              required
+              aria-invalid={!!error}
+              style={{
+                width: "100%",
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.15)",
+                background: "rgba(17,24,39,0.8)",
+                padding: "12px 16px",
+                color: "#fff",
+                fontSize: 14,
+                minHeight: 44,
+                outline: "none",
+              }}
+            />
+          </label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", fontWeight: 600 }}>
+              Senha
+            </span>
+            <input
+              type="password"
+              name="password"
+              required
+              aria-invalid={!!error}
+              style={{
+                width: "100%",
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.15)",
+                background: "rgba(17,24,39,0.8)",
+                padding: "12px 16px",
+                color: "#fff",
+                fontSize: 14,
+                minHeight: 44,
+                outline: "none",
+              }}
+            />
+          </label>
+
+          {error ? <p style={{ fontSize: 14, color: "#fecaca" }}>{error}</p> : null}
+
+          <div style={{ display: "grid", gap: 10 }}>
             <button
-              type="button"
-              onClick={signInWithGoogle}
+              type="submit"
+              disabled={submitting}
               style={{
                 width: "100%",
                 borderRadius: 12,
@@ -90,30 +122,30 @@ export default function LoginPage() {
                 fontSize: 14,
                 fontWeight: 600,
                 cursor: "pointer",
+                minHeight: 44,
               }}
             >
-              Entrar com Google
+              {submitting ? "Entrando…" : "Entrar"}
             </button>
-            <button
-              type="button"
-              onClick={signOut}
+            <a
+              href="/"
               style={{
-                width: "100%",
+                display: "inline-block",
+                textAlign: "center",
                 borderRadius: 12,
                 border: "1px solid rgba(255,255,255,0.1)",
                 background: "transparent",
-                padding: "8px 16px",
-                color: "rgba(255,255,255,0.6)",
+                padding: "10px 16px",
+                color: "rgba(255,255,255,0.75)",
                 fontSize: 12,
-                cursor: "pointer",
+                minHeight: 44,
+                textDecoration: "none",
               }}
             >
-              Sair
-            </button>
+              Voltar para o início
+            </a>
           </div>
-        )}
-
-        {error ? <p style={{ marginTop: 8, fontSize: 14, color: "#fecaca" }}>{error}</p> : null}
+        </form>
       </div>
     </div>
   );
