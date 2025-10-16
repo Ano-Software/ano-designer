@@ -1,0 +1,81 @@
+name: Sync dev with main
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-dev-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'Ano-Software/ano-designer'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch all branches
+        run: git fetch origin --prune
+
+      - name: Ensure dev exists in remote
+        run: |
+          if git ls-remote --exit-code --heads origin dev >/dev/null 2>&1; then
+            echo "dev exists on remote"
+          else
+            echo "Creating dev from main on remote"
+            git branch dev origin/main
+            git push origin dev
+          fi
+
+      - name: Merge main into dev (prefer main on conflicts)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          # Ensure we have the latest refs
+          git fetch origin --prune
+
+          # Checkout dev and merge main, preferring main on conflicts
+          git checkout dev
+          # Use -X theirs to prefer incoming changes (main) when conflicts occur
+          git merge -X theirs --no-edit origin/main || true
+
+          # If there are still unresolved conflicts, fail
+          if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+            echo "Unresolved conflicts after merge -X theirs" >&2
+            exit 1
+          fi
+
+          # Push if there are changes; if push is blocked by protection, open PR as fallback
+          if ! git diff --quiet --cached || ! git diff --quiet; then
+            echo "Attempting to push to origin/dev..."
+            set +e
+            git push origin dev
+            PUSH_STATUS=$?
+            set -e
+            if [ "$PUSH_STATUS" -ne 0 ]; then
+              echo "Push blocked; creating PR from main to dev..."
+              # Create or reuse PR main -> dev
+              gh pr create --base dev --head main \
+                --title "chore: sync dev <- main" \
+                --body "Automated sync of dev with main. Conflicts resolved preferring main. If branch protection blocks direct push, this PR is the fallback." || echo "PR may already exist or cannot be created"
+            else
+              echo "Push to dev successful."
+            fi
+          else
+            echo "No changes to sync."
+          fi
