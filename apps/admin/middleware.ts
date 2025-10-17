@@ -8,6 +8,7 @@ const PUBLIC_ROUTES = new Set([
   "/login",
   "/403",
   "/logout",
+  "/api/auth/login",
   "/favicon.ico",
   "/robots.txt",
   "/sitemap.xml",
@@ -33,7 +34,7 @@ export async function middleware(req: NextRequest) {
     if (!raw) {
       return NextResponse.redirect(new URL("/login", req.url), 307);
     }
-    const session = verifySession(raw, env.sessionSecret);
+    const session = await verifySession(raw, env.sessionSecret);
     if (!session || session.role !== "admin") {
       return NextResponse.redirect(new URL("/login", req.url), 307);
     }
@@ -47,6 +48,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/|.*\\.(?:png|jpg|jpeg|svg|gif|ico|webp|css|js|map|txt)$|favicon.ico|robots.txt|sitemap.xml|login|403|logout).*)",
+    "/((?!_next/|api/|.*\\.(?:png|jpg|jpeg|svg|gif|ico|webp|css|js|map|txt)$|favicon.ico|robots.txt|sitemap.xml|login|403|logout).*)",
   ],
 };
