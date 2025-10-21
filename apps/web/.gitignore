@@ -1,1 +1,4 @@
 .vercel
+
+# envs locais
+.env.local
