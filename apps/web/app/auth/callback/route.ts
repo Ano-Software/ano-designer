@@ -16,6 +16,16 @@ export async function GET(request: Request) {
   const errorDescription = requestUrl.searchParams.get("error_description");
   const type = requestUrl.searchParams.get("type");
 
+  // Canonicalize domain for production: force app.anoig.com on callback
+  if (process.env.NODE_ENV === "production") {
+    const host = requestUrl.hostname;
+    if (host !== "app.anoig.com") {
+      const u = new URL("https://app.anoig.com/auth/callback");
+      u.search = requestUrl.search;
+      return NextResponse.redirect(u.toString(), 301);
+    }
+  }
+
   const config = getPublicSupabaseConfig();
 
   if (!config) {
