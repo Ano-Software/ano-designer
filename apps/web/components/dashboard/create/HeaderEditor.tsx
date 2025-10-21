@@ -44,6 +44,46 @@ type TopoMessages = {
   invalidFile: string;
 };
 
+// Versão corrigida em UTF-8 dos textos padrão
+const defaultMessagesFixed: TopoMessages = {
+  tabTitle: "Topo",
+  tabDescription: "Configure altura, fundo, textos e imagem do cabeçalho com prévia ao vivo.",
+  previewLabel: "Prévia do cabeçalho",
+  heightLabel: "Altura do cabeçalho",
+  heightValue: "Altura atual: {value}px",
+  heightHelp: "Ajuste apenas a borda inferior. O topo permanece fixo.",
+  backgroundSolid: "Cor sólida",
+  backgroundGradient: "Gradiente",
+  gradientFrom: "Cor inicial",
+  gradientTo: "Cor final",
+  gradientAngle: "Ângulo",
+  titleLabel: "Título",
+  titlePlaceholder: "Nome forte para o destaque",
+  subtitleLabel: "Subtítulo",
+  subtitlePlaceholder: "Mensagem breve de apoio",
+  titleColorLabel: "Cor do título",
+  subtitleColorLabel: "Cor do subtítulo",
+  alignmentLabel: "Alinhamento",
+  alignmentLeft: "Esquerda",
+  alignmentCenter: "Centro",
+  alignmentRight: "Direita",
+  imageLabel: "Foto de cabeçalho",
+  imageUploadHint: "PNG, JPG ou WebP. A imagem ocupa 100% da altura configurada.",
+  removeImage: "Remover imagem",
+  imageAlignmentLabel: "Alinhamento da foto",
+  imageAlignmentLeft: "Esquerda",
+  imageAlignmentCenter: "Centro",
+  imageAlignmentRight: "Direita",
+  toggleRemoveBackground: "Remover fundo automaticamente",
+  toggleOptimizeImage: "Otimizar imagem",
+  statusIdle: "Nenhum upload em andamento.",
+  statusReading: "Processando upload...",
+  statusRemoving: "Removendo fundo no servidor...",
+  statusSuccess: "Imagem pronta!",
+  statusError: "Não foi possível processar a imagem.",
+  invalidFile: "Selecione um arquivo de imagem válido.",
+};
+
 type TopoTabProps = {
   value: HeroSettings;
   onChange: (value: HeroSettings) => void;
@@ -594,7 +634,7 @@ function HeaderImageControls({
 // removed ToggleThumb helper
 
 export function TopoTab({ value, onChange, messages }: TopoTabProps) {
-  const copy = useMemo(() => ({ ...defaultMessages, ...messages }), [messages]);
+  const copy = useMemo(() => ({ ...defaultMessagesFixed, ...messages }), [messages]);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const update = (patch: Partial<HeroSettings>) => {

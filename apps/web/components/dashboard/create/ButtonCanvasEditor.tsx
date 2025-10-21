@@ -36,15 +36,15 @@ type PreviewTokens = {
 };
 
 const styleOptions: StyleOption[] = [
-  { id: "filled", label: "Filled", description: "Botao solido com cor de destaque." },
-  { id: "gradient", label: "Gradient", description: "Transicao suave entre duas cores." },
-  { id: "glass", label: "Glass", description: "Efeito vidro com transparencia." },
-  { id: "outline", label: "Outline", description: "Somente contorno com fundo transparente." },
-  { id: "neumorphic", label: "Neumorphic", description: "Cartao com sombras suaves em relevo." },
+  { id: "filled", label: "Sólido", description: "Botão sólido com cor de destaque." },
+  { id: "gradient", label: "Gradiente", description: "Transição suave entre duas cores." },
+  { id: "glass", label: "Vidro", description: "Efeito vidro com transparência." },
+  { id: "outline", label: "Contorno", description: "Somente contorno com fundo transparente." },
+  { id: "neumorphic", label: "Neumórfico", description: "Cartão com sombras suaves em relevo." },
 ];
 
 const iconOptions: IconOption[] = [
-  { id: null, label: "Sem icone" },
+  { id: null, label: "Sem ícone" },
   { id: "link", label: "Link" },
   { id: "phone", label: "Telefone" },
   { id: "chat", label: "Chat" },
@@ -342,7 +342,7 @@ export function ButtonCanvasEditor({ items, onChange }: ButtonCanvasEditorProps)
     const baseColor = items.length % 2 === 0 ? "#e2b23b" : "#38bdf8";
     const newButton: ButtonCanvasItem = {
       id: generateId(),
-      label: `Novo botao ${items.length + 1}`,
+      label: `Novo botão ${items.length + 1}`,
       url: "https://",
       style: "filled",
       textColor: "#03160f",
@@ -366,7 +366,7 @@ export function ButtonCanvasEditor({ items, onChange }: ButtonCanvasEditorProps)
     const clone: ButtonCanvasItem = {
       ...original,
       id: generateId(),
-      label: `${original.label} copia`,
+      label: `${original.label} cópia`,
     };
     const index = items.findIndex((button) => button.id === id);
     const next = [...items];
@@ -447,21 +447,21 @@ export function ButtonCanvasEditor({ items, onChange }: ButtonCanvasEditorProps)
   return (
     <section className="space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_20px_50px_rgba(13,32,24,0.35)] backdrop-blur">
       <header className="space-y-1">
-        <h2 className="text-lg font-semibold text-white">Botoes</h2>
+        <h2 className="text-lg font-semibold text-white">Botões</h2>
         <p className="text-sm text-white/70">
-          Gerencie, reordene e personalize o estilo dos botoes.
+          Gerencie, reordene e personalize o estilo dos botões.
         </p>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[260px_1fr] lg:gap-8">
         <aside className="space-y-4">
           <Button type="button" variant="secondary" onClick={handleAddButton}>
-            Adicionar novo botao
+            Adicionar novo botão
           </Button>
 
           <div className="space-y-2">
             {items.length === 0 ? (
-              <p className="text-sm text-white/60">Nenhum botao adicionado ainda.</p>
+              <p className="text-sm text-white/60">Nenhum botão adicionado ainda.</p>
             ) : (
               <ul className="space-y-2">
                 {items.map((button) => {
@@ -515,7 +515,7 @@ export function ButtonCanvasEditor({ items, onChange }: ButtonCanvasEditorProps)
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
-                      aria-label="Arrastar botao"
+                      aria-label="Arrastar botão"
                       className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-white/70 transition hover:border-white/25 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e2b23b] cursor-grab"
                       draggable
                       onDragStart={(event) => handleDragStart(button.id, event)}
@@ -524,7 +524,7 @@ export function ButtonCanvasEditor({ items, onChange }: ButtonCanvasEditorProps)
                       <span aria-hidden>⋮⋮</span>
                     </button>
                     <div>
-                      <p className="text-sm font-semibold text-white">Botao {index + 1}</p>
+                      <p className="text-sm font-semibold text-white">Botão {index + 1}</p>
                       <p className="text-xs text-white/50">ID: {button.id.slice(0, 8)}</p>
                     </div>
                   </div>
@@ -573,7 +573,7 @@ export function ButtonCanvasEditor({ items, onChange }: ButtonCanvasEditorProps)
                       value={button.label}
                       onChange={(event) => updateButton(button.id, { label: event.target.value })}
                       className="w-full rounded-xl border border-white/10 bg-[#111827]/80 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
-                      placeholder="Nome exibido no botao"
+                      placeholder="Nome exibido no botão"
                       draggable={false}
                     />
                   </label>
@@ -640,7 +640,7 @@ export function ButtonCanvasEditor({ items, onChange }: ButtonCanvasEditorProps)
                     onTouchStart={stopDragPropagation}
                   >
                     <span className="text-xs font-medium uppercase tracking-wide text-white/60">
-                      Altura do botao ({normalizedHeight}px)
+                      Altura do botão ({normalizedHeight}px)
                     </span>
                     <input
                       type="range"
@@ -672,7 +672,7 @@ export function ButtonCanvasEditor({ items, onChange }: ButtonCanvasEditorProps)
                     onTouchStart={stopDragPropagation}
                   >
                     <span className="text-xs font-medium uppercase tracking-wide text-white/60">
-                      Cor primaria
+                      Cor primária
                     </span>
                     <input
                       type="color"
@@ -724,7 +724,7 @@ export function ButtonCanvasEditor({ items, onChange }: ButtonCanvasEditorProps)
                       onTouchStart={stopDragPropagation}
                     >
                       <span className="text-xs font-medium uppercase tracking-wide text-white/60">
-                        Cor secundaria
+                        Cor secundária
                       </span>
                       <input
                         type="color"
@@ -745,7 +745,7 @@ export function ButtonCanvasEditor({ items, onChange }: ButtonCanvasEditorProps)
                       onTouchStart={stopDragPropagation}
                     >
                       <span className="text-xs font-medium uppercase tracking-wide text-white/60">
-                        Angulo {normalizedGradientAngle}°
+                        Ângulo {normalizedGradientAngle}°
                       </span>
                       <input
                         type="range"
@@ -778,7 +778,7 @@ export function ButtonCanvasEditor({ items, onChange }: ButtonCanvasEditorProps)
                     onTouchStart={stopDragPropagation}
                   >
                     <span className="text-xs font-medium uppercase tracking-wide text-white/60">
-                      Icone
+                      Ícone
                     </span>
                     <select
                       value={button.icon ?? ""}
@@ -822,7 +822,7 @@ export function ButtonCanvasEditor({ items, onChange }: ButtonCanvasEditorProps)
                       <div className="flex items-center gap-3">
                         <img
                           src={button.image}
-                          alt="Miniatura do botao"
+                          alt="Miniatura do botão"
                           className="h-10 w-10 rounded-lg object-cover"
                         />
                         <button
@@ -848,20 +848,20 @@ export function ButtonCanvasEditor({ items, onChange }: ButtonCanvasEditorProps)
 
                 <div className="mt-5 space-y-2" data-no-drag="true" draggable={false}>
                   <span className="text-xs font-medium uppercase tracking-wide text-white/60">
-                    Preview
+                    Prévia
                   </span>
                   <div className={tokens.className} style={tokens.style}>
                     <div className="flex w-full items-center gap-4">
                       {button.image ? (
                         <img
                           src={button.image}
-                          alt="Imagem do botao"
+                          alt="Imagem do botão"
                           className="h-14 w-14 rounded-2xl object-cover"
                         />
                       ) : null}
                       {button.icon ? <IconPreview id={button.icon} /> : null}
                       <span className="flex-1 truncate text-left">
-                        {button.label || "Texto do botao"}
+                        {button.label || "Texto do botão"}
                       </span>
                     </div>
                   </div>

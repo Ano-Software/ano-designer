@@ -1,55 +1,52 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
+import { getPublicSupabaseConfig } from "@/lib/env";
 
-// Rotas explicitamente públicas (passam sem check)
-const PUBLIC_ROUTES = new Set([
-  "/login",
-  "/403",
-  "/logout",
-  "/api/auth/login",
-  "/favicon.ico",
-  "/robots.txt",
-  "/sitemap.xml",
-]);
+const PUBLIC_ROUTES = new Set(["/login", "/auth/callback", "/403"]);
+const PUBLIC_PREFIX = ["/api", "/_next", "/favicon", "/icons", "/public"];
+const STATIC_EXT = new Set([".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp", ".avif"]);
 
-export const runtime = "nodejs";
+const hasStaticExt = (pathname: string) => {
+  const i = pathname.lastIndexOf(".");
+  if (i === -1) return false;
+  return STATIC_EXT.has(pathname.slice(i).toLowerCase());
+};
+
+const isPublicPath = (pathname: string) =>
+  PUBLIC_ROUTES.has(pathname) ||
+  hasStaticExt(pathname) ||
+  PUBLIC_PREFIX.some((p) => pathname.startsWith(p));
+
 export async function middleware(req: NextRequest) {
+  const res = NextResponse.next();
+  const config = getPublicSupabaseConfig();
+  if (!config) return res;
+
+  const supabase = createMiddlewareClient({ req, res }, config);
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   const { pathname } = req.nextUrl;
 
-  // Não bloquear rotas públicas caso passem pelo matcher
-  if (PUBLIC_ROUTES.has(pathname) || pathname.startsWith("/_next/")) {
-    return NextResponse.next();
+  // Public routes
+  if (isPublicPath(pathname)) {
+    return res;
   }
 
-  try {
-    const { getAdminEnv } = await import("@/lib/env-server");
-    const { verifySession } = await import("@/lib/session");
-
-    const env = getAdminEnv();
-    if (!env) {
-      return NextResponse.redirect(new URL("/login", req.url), 307);
-    }
-
-    // Lê cookie de sessão e verifica assinatura/expiração
-    const raw =
-      req.cookies.get("__Host-admin_session")?.value || req.cookies.get("admin_session")?.value;
-    if (!raw) {
-      return NextResponse.redirect(new URL("/login", req.url), 307);
-    }
-    const session = await verifySession(raw, env.sessionSecret);
-    if (!session || session.role !== "admin") {
-      return NextResponse.redirect(new URL("/login", req.url), 307);
-    }
-
-    return NextResponse.next();
-  } catch {
-    // Qualquer erro → evitar 500 e mandar para login (307)
-    return NextResponse.redirect(new URL("/login", req.url), 307);
+  // Protect everything else, including '/'
+  if (!session) {
+    return NextResponse.redirect(new URL("/login", req.url));
   }
+
+  const role = (session.user.user_metadata as Record<string, unknown> | undefined)?.role;
+  if (role !== "admin") {
+    return NextResponse.redirect(new URL("/403", req.url));
+  }
+
+  return res;
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/|.*\\.(?:png|jpg|jpeg|svg|gif|ico|webp|css|js|map|txt)$|favicon.ico|robots.txt|sitemap.xml|login|403|logout).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icons|public).*)"],
 };
