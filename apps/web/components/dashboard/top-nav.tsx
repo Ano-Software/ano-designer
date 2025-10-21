@@ -8,10 +8,10 @@ import { createSupabaseBrowserClient } from "@/lib/supabase-client";
 import { cn } from "@/lib/cn";
 
 const navLinks = [
-  { href: "/dashboard", label: "Inicio" },
+  { href: "/dashboard", label: "Início" },
   { href: "/criar", label: "Criar" },
   { href: "/projetos", label: "Projetos" },
-  { href: "/relatorio", label: "Relatorio" },
+  { href: "/relatorio", label: "Relatório" },
 ] as const;
 
 type NavLink = (typeof navLinks)[number];

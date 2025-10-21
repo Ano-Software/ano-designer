@@ -221,7 +221,7 @@ function LeaveGuardModal({
       <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0d1f18] p-6 text-white shadow-2xl">
         <h3 className="text-lg font-semibold">Deseja sair sem salvar?</h3>
         <p className="mt-2 text-sm text-white/70">
-          Salve o rascunho antes de deixar a pagina ou continue sem salvar.
+          Salve o rascunho antes de deixar a página ou continue sem salvar.
         </p>
         <div className="mt-6 space-y-2">
           <Button variant="secondary" onClick={onConfirmAndSave}>
@@ -439,12 +439,12 @@ export default function CreateProjectPage() {
   const validateBaseStep = useCallback(() => {
     const errors: { title?: string | null; slug?: string | null } = {};
     if (!draft.base.title.trim()) {
-      errors.title = "Informe um titulo.";
+      errors.title = "Informe um título.";
     }
     if (!draft.base.slug.trim()) {
       errors.slug = "Informe um slug.";
     } else if (!isValidSlug(draft.base.slug.trim())) {
-      errors.slug = "Use letras, numeros e hifens (minimo 3).";
+      errors.slug = "Use letras, números e hífens (mínimo 3).";
     } else if (!slugAvailable) {
       errors.slug = slugMessage ?? "Slug indisponível.";
     }
@@ -484,7 +484,7 @@ export default function CreateProjectPage() {
     setSavingDraft(true);
     try {
       const payload = {
-        name: draft.base.title || "Projeto sem titulo",
+        name: draft.base.title || "Projeto sem título",
         description: JSON.stringify({ ...draft, publication: { status: "draft" } }),
       };
       await apiClient.createProject(payload as any);
@@ -527,7 +527,7 @@ export default function CreateProjectPage() {
         throw new ApiClientError("Slug indisponível.", 400, null);
       }
       const payload = {
-        name: draft.base.title || "Projeto sem titulo",
+        name: draft.base.title || "Projeto sem título",
         description: JSON.stringify({
           ...draft,
           publication: { status: "published", publicPath: draft.base.slug },
@@ -659,7 +659,7 @@ export default function CreateProjectPage() {
             className="w-full rounded-xl border border-white/25 bg-[#1b2433] px-4 py-3 text-sm text-white/90 transition focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#facc15] hover:border-white/40"
           >
             <option value="nao" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-              NÃ£o
+              Não
             </option>
             <option value="sim" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
               Sim
@@ -668,7 +668,7 @@ export default function CreateProjectPage() {
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-white">Data de criaÃ§Ã£o</span>
+          <span className="text-sm font-medium text-white">Data de criação</span>
           <input
             type="date"
             value={formatDateInput(draft.base.createdAt)}
@@ -724,7 +724,7 @@ export default function CreateProjectPage() {
                 base: { ...current.base, companyName: e.target.value },
               }))
             }
-            placeholder="RazÃ£o social"
+            placeholder="Razão social"
             className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-[#e2b23b] focus:outline-none focus:ring-2 focus:ring-[#e2b23b]/40"
           />
         </label>
@@ -797,7 +797,7 @@ export default function CreateProjectPage() {
               Selecione
             </option>
             <option value="pf" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-              Pessoa FÃ­sica
+              Pessoa Física
             </option>
             <option value="pj" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
               Empresa
@@ -851,7 +851,7 @@ export default function CreateProjectPage() {
                   Pix
                 </option>
                 <option value="cartao" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
-                  CartÃ£o
+                  Cartão
                 </option>
                 <option value="boleto" style={{ color: "#0f172a", backgroundColor: "#ffffff" }}>
                   Boleto
@@ -945,7 +945,7 @@ export default function CreateProjectPage() {
                 variant="primary"
                 disabled={currentStep === "project" && baseStepInvalid}
               >
-                Avancar
+                Avançar
               </Button>
             </div>
           ) : null}
@@ -970,7 +970,7 @@ export default function CreateProjectPage() {
           ) : null}
         </div>
 
-        <div className="xl:pl-4 xl:self-start xl:h-fit">
+        <div className="xl:pl-4 xl:self-start xl:sticky xl:top-24 xl:h-fit">
           <MobilePreview {...mobilePreviewProps} />
         </div>
       </div>

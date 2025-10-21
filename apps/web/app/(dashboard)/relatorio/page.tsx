@@ -1,7 +1,7 @@
 import { ReportsPage } from "./reports-page";
 
 export const metadata = {
-  title: "Relatorio",
+  title: "Relatório",
 };
 
 export default function RelatorioPage() {
