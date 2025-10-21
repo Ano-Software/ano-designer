@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import type { Database, TablesInsert } from "@/types/supabase";
 import { getPublicSupabaseConfig } from "@/lib/env";
+import { getSiteURL } from "@/lib/site-url";
 
 export const runtime = "nodejs";
 
@@ -11,21 +12,25 @@ export async function GET(request: Request) {
   const origin = requestUrl.origin;
   const code = requestUrl.searchParams.get("code");
   const next = requestUrl.searchParams.get("next");
+  const errorParam = requestUrl.searchParams.get("error");
   const errorDescription = requestUrl.searchParams.get("error_description");
   const type = requestUrl.searchParams.get("type");
 
   const config = getPublicSupabaseConfig();
 
   if (!config) {
-    return NextResponse.redirect(`${origin}/login?error=supabase-config`);
+    const site = getSiteURL(request);
+    return NextResponse.redirect(`${site}/login?error=supabase-config`);
   }
 
-  if (errorDescription) {
-    return NextResponse.redirect(`${origin}/login?error=oauth`);
+  if (errorParam || errorDescription) {
+    const site = getSiteURL(request);
+    return NextResponse.redirect(`${site}/login?error=oauth`);
   }
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=oauth`);
+    const site = getSiteURL(request);
+    return NextResponse.redirect(`${site}/login?error=oauth`);
   }
 
   try {
@@ -41,7 +46,8 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error("[auth/callback] exchange error", error);
-      return NextResponse.redirect(`${origin}/login?error=oauth`);
+      const site = getSiteURL(request);
+      return NextResponse.redirect(`${site}/login?error=oauth`);
     }
 
     // Upsert user profile after successful session exchange
@@ -75,16 +81,22 @@ export async function GET(request: Request) {
     }
   } catch (unknownError) {
     console.error("[auth/callback] unexpected error", unknownError);
-    return NextResponse.redirect(`${origin}/login?error=oauth`);
+    const site = getSiteURL(request);
+    return NextResponse.redirect(`${site}/login?error=oauth`);
   }
 
   if (type === "recovery") {
-    return NextResponse.redirect(`${origin}/reset/update`);
+    const site = getSiteURL(request);
+    return NextResponse.redirect(`${site}/reset/update`);
   }
 
   if (next && next.startsWith("/")) {
-    return NextResponse.redirect(`${origin}${next}`);
+    const site = getSiteURL(request);
+    return NextResponse.redirect(`${site}${next}`);
   }
 
-  return NextResponse.redirect(`${origin}/dashboard`);
+  {
+    const site = getSiteURL(request);
+    return NextResponse.redirect(`${site}/dashboard`);
+  }
 }

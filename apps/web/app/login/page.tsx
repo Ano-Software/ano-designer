@@ -151,9 +151,10 @@ export default function LoginPage() {
       setSuccess(null);
 
       try {
-        const redirectBase =
-          typeof window === "undefined" ? SITE_URL : (SITE_URL ?? window.location.origin);
-        const redirectTo = redirectBase ? `${redirectBase}/auth/callback` : undefined;
+        const redirectTo = `${
+          process.env.NEXT_PUBLIC_SITE_URL ||
+          (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000")
+        }/auth/callback`;
         const { error: oauthError } = await supabase.auth.signInWithOAuth({
           provider,
           options: {
