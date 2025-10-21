@@ -157,10 +157,7 @@ export default function LoginPage() {
           (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
         const redirectTo = `${base.replace(/\/$/, "")}/auth/callback`;
         const prod = process.env.NODE_ENV === "production";
-        const finalRedirect =
-          prod && redirectTo.startsWith("http://localhost")
-            ? "https://app.anoig.com/auth/callback"
-            : redirectTo;
+        const finalRedirect = prod ? "https://app.anoig.com/auth/callback" : redirectTo;
 
         const { error: oauthError } = await supabase.auth.signInWithOAuth({
           provider,
