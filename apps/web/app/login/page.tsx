@@ -15,6 +15,7 @@ import SupabaseConfigWarning, {
   MISSING_SUPABASE_CONFIG_MESSAGE,
 } from "@/components/SupabaseConfigWarning";
 import { createSupabaseBrowserClient } from "@/lib/supabase-client";
+import { getSiteURL } from "@/lib/site-url";
 
 const loginSchema = z.object({
   identifier: z
@@ -151,13 +152,20 @@ export default function LoginPage() {
       setSuccess(null);
 
       try {
-        const redirectBase =
-          typeof window === "undefined" ? SITE_URL : (SITE_URL ?? window.location.origin);
-        const redirectTo = redirectBase ? `${redirectBase}/auth/callback` : undefined;
+        const base =
+          process.env.NEXT_PUBLIC_SITE_URL ||
+          (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
+        const redirectTo = `${base.replace(/\/$/, "")}/auth/callback`;
+        const prod = process.env.NODE_ENV === "production";
+        const finalRedirect =
+          prod && redirectTo.startsWith("http://localhost")
+            ? "https://app.anoig.com/auth/callback"
+            : redirectTo;
+
         const { error: oauthError } = await supabase.auth.signInWithOAuth({
           provider,
           options: {
-            redirectTo,
+            redirectTo: finalRedirect,
           },
         });
 
