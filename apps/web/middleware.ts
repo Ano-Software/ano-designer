@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 import { getPublicSupabaseConfig } from "@/lib/env";
 
-const PUBLIC_ROUTES = new Set(["/login", "/signup", "/reset", "/auth/callback"]);
+const PUBLIC_ROUTES = new Set(["/login", "/signup", "/reset", "/auth/callback", "/auth/diag"]);
 const AUTH_REDIRECT_ROUTES = new Set(["/login", "/signup", "/reset"]);
 const PUBLIC_PREFIX = ["/api", "/_next", "/favicon", "/icons", "/public"];
 const PUBLIC_STATIC_EXTENSIONS = new Set([
