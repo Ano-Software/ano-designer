@@ -61,6 +61,12 @@ const OAuthButtons = ({ onSignIn, disabled, className, providers }: OAuthButtons
     if (disabled || loading) return;
     try {
       setLoading(provider);
+      if (provider === "google") {
+        if (typeof window !== "undefined") {
+          window.location.assign("/auth/google/start");
+          return;
+        }
+      }
       await onSignIn?.(provider);
     } finally {
       setLoading(null);
