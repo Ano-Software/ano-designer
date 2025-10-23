@@ -1,0 +1,40 @@
+name: Web CI
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/web-ci.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "9"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (best effort)
+        run: pnpm -w typecheck || true
+
+      - name: Lint (best effort)
+        run: pnpm -w lint --fix || true
+
+      - name: Build web
+        working-directory: apps/web
+        run: pnpm build
