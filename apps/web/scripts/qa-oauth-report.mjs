@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 import { chromium } from "playwright";
-import fs from "node:fs/promises";
 
 const CANON = "https://app.anoig.com";
-const BASE = CANON; // always test production domain
+const BASE = CANON;
 const LOGIN_URL = `${BASE.replace(/\/$/, "")}/login`;
 const DIAG_URL = `${BASE.replace(/\/$/, "")}/auth/diag`;
 
@@ -17,7 +16,6 @@ try {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await context.newPage();
 
-  // Login page, capture authorize request
   await page.goto(LOGIN_URL, { waitUntil: "domcontentloaded" });
   await page.waitForSelector("text=Entrar");
   await page.screenshot({ path: "apps/web/qa-login.png", fullPage: true });
@@ -46,7 +44,6 @@ try {
     checkStatus = endsOk && notLocalhost ? "OK" : "FAIL";
   }
 
-  // Diag page
   const page2 = await context.newPage();
   await page2.goto(DIAG_URL, { waitUntil: "domcontentloaded" });
   await page2.screenshot({ path: "apps/web/qa-diag.png", fullPage: true });
@@ -64,10 +61,9 @@ try {
 
   await browser.close();
 } catch (err) {
-  // fall through to final print
+  // ignore
 }
 
-// Final required output
 console.log("Deploy: https://app.anoig.com");
 console.log(`Google redirect param: ${redirectParam || "<empty>"}`);
 console.log(`Check: ${checkStatus} (esperado terminar em https://app.anoig.com/auth/callback)`);
