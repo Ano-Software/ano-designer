@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent, useEffect } from "react";
 import { z } from "zod";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { FormAlert } from "@/components/auth/form-alert";
@@ -12,14 +12,19 @@ import { PasswordInput } from "@/components/ui/password-input";
 import SupabaseConfigWarning, {
   MISSING_SUPABASE_CONFIG_MESSAGE,
 } from "@/components/SupabaseConfigWarning";
-import { createSupabaseBrowserClient } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase/browser";
 
 const signupSchema = z
   .object({
+    fullName: z
+      .string({ required_error: "Informe seu nome completo." })
+      .min(1, "Informe seu nome completo."),
     username: z
       .string({ required_error: "Informe um nome de usuário." })
-      .min(3, "Mínimo de 3 caracteres.")
-      .regex(/^[a-z0-9_.-]+$/i, "Use apenas letras, números ou . _ -"),
+      .regex(
+        /^[a-z0-9._-]{3,20}$/i,
+        "Use 3–20 caracteres: letras, números, ponto, traço ou underline."
+      ),
     email: z
       .string({ required_error: "Informe seu e-mail corporativo." })
       .email("Informe um e-mail válido."),
@@ -37,10 +42,10 @@ type SignupValues = z.infer<typeof signupSchema>;
 type FieldErrors = Partial<Record<keyof SignupValues, string>>;
 
 export default function SignupPage() {
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const supabaseUnavailable = supabase === null;
+  const supabaseUnavailable = false;
 
   const [values, setValues] = useState<SignupValues>({
+    fullName: "",
     username: "",
     email: "",
     password: "",
@@ -50,6 +55,40 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cooldownSec, setCooldownSec] = useState<number>(0);
+  const [resendCooldownSec, setResendCooldownSec] = useState<number>(0);
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [usernameChecking, setUsernameChecking] = useState<boolean>(false);
+  const [usernameMsg, setUsernameMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (cooldownSec <= 0) return;
+    const t = setInterval(() => setCooldownSec((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(t);
+  }, [cooldownSec]);
+
+  useEffect(() => {
+    if (resendCooldownSec <= 0) return;
+    const t = setInterval(() => setResendCooldownSec((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(t);
+  }, [resendCooldownSec]);
+
+  const checkUsername = async (u: string) => {
+    const v = (u || "").trim();
+    setUsernameMsg(null);
+    setUsernameAvailable(null);
+    if (!v || v.length < 3) return;
+    setUsernameChecking(true);
+    try {
+      const res = await fetch(`/api/auth/username-available?u=${encodeURIComponent(v)}`);
+      const data = (await res.json()) as { available?: boolean };
+      if (data && typeof data.available === "boolean") {
+        setUsernameAvailable(data.available);
+        setUsernameMsg(data.available ? null : "Nome de usuário indisponível. Tente outro.");
+      }
+    } catch {}
+    setUsernameChecking(false);
+  };
 
   const handleInputChange =
     (field: keyof SignupValues) => (event: ChangeEvent<HTMLInputElement>) => {
@@ -61,6 +100,7 @@ export default function SignupPage() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting || cooldownSec > 0) return;
     setError(null);
     setSuccess(null);
 
@@ -86,35 +126,80 @@ export default function SignupPage() {
     setIsSubmitting(true);
 
     try {
-      const { username, email, password } = result.data;
+      const { fullName, username, email, password } = result.data;
+      const isProd = process.env.NODE_ENV === "production";
+      const base = isProd
+        ? "https://app.anoig.com"
+        : typeof window === "undefined"
+          ? "http://localhost:3000"
+          : window.location.origin;
       const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo:
-            typeof window === "undefined" ? undefined : `${window.location.origin}/auth/callback`,
-          data: {
-            username,
-          },
+          emailRedirectTo: `${base.replace(/\/$/, "")}/auth/callback`,
+          data: { username, full_name: fullName },
         },
       });
 
       if (signUpError) {
-        throw signUpError;
+        const msg = (signUpError.message || "").toLowerCase();
+        if (msg.includes("already") || msg.includes("registered")) {
+          setError("Este e-mail já está cadastrado.");
+        } else if (
+          msg.includes("rate limit") ||
+          msg.includes("too many requests") ||
+          msg.includes("over quota") ||
+          msg.includes("temporarily unavailable")
+        ) {
+          setError("Muitas tentativas. Aguarde um pouco e tente novamente.");
+        } else {
+          setError("Não foi possível enviar o e-mail agora. Tente novamente em instantes.");
+        }
+        return;
       }
 
-      setSuccess("Cadastro realizado! Enviamos um e-mail de confirmação para você continuar.");
-      setValues({ username: "", email: "", password: "", confirmPassword: "" });
+      setSuccess("Enviamos um e-mail de confirmação. Verifique sua caixa de entrada.");
+      setValues({ fullName: "", username: "", email: "", password: "", confirmPassword: "" });
       setFieldErrors({});
+      setCooldownSec(60);
     } catch (caught) {
       const message =
         caught instanceof Error
           ? caught.message
           : "Não foi possível concluir seu cadastro. Tente novamente em instantes.";
-      setError(message || "Não foi possível concluir seu cadastro.");
+      setError(message || "Não foi possível concluir seu cadastro. Tente novamente em instantes.");
+      setCooldownSec(60);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleResend = async () => {
+    if (!values.email || resendCooldownSec > 0) return;
+    const isProd = process.env.NODE_ENV === "production";
+    const base = isProd
+      ? "https://app.anoig.com"
+      : typeof window === "undefined"
+        ? "http://localhost:3000"
+        : window.location.origin;
+    try {
+      const res = await fetch("/api/auth/signup/fallback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: values.email,
+          redirectTo: `${base.replace(/\/$/, "")}/auth/callback`,
+        }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { link?: string };
+        if (data?.link) {
+          window.open(data.link, "_blank");
+          setResendCooldownSec(60);
+        }
+      }
+    } catch {}
   };
 
   return (
@@ -136,6 +221,20 @@ export default function SignupPage() {
 
         <form className="space-y-5" onSubmit={handleSubmit} noValidate>
           <div className="space-y-2">
+            <Label htmlFor="signup-fullname">Nome completo</Label>
+            <Input
+              id="signup-fullname"
+              autoComplete="name"
+              placeholder="Seu nome completo"
+              value={values.fullName}
+              onChange={handleInputChange("fullName")}
+              error={fieldErrors.fullName}
+              disabled={isSubmitting || supabaseUnavailable}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="signup-username">Nome de usuário</Label>
             <Input
               id="signup-username"
@@ -143,6 +242,7 @@ export default function SignupPage() {
               placeholder="seunome"
               value={values.username}
               onChange={handleInputChange("username")}
+              onBlur={() => checkUsername(values.username)}
               error={fieldErrors.username}
               disabled={isSubmitting || supabaseUnavailable}
               aria-describedby={
@@ -151,8 +251,9 @@ export default function SignupPage() {
               required
             />
             <p id="signup-username-helper" className="text-xs text-white/50">
-              Use letras, números, ponto, traço ou underline.
+              Use 3–20 caracteres: letras, números, ponto, traço ou underline.
             </p>
+            {usernameMsg ? <p className="text-xs font-medium text-red-300">{usernameMsg}</p> : null}
             {fieldErrors.username ? (
               <p id="signup-username-error" className="text-xs font-medium text-red-300">
                 {fieldErrors.username}
@@ -167,7 +268,7 @@ export default function SignupPage() {
               type="email"
               inputMode="email"
               autoComplete="email"
-              placeholder="você@empresa.com"
+              placeholder="voce@empresa.com"
               value={values.email}
               onChange={handleInputChange("email")}
               error={fieldErrors.email}
@@ -230,9 +331,25 @@ export default function SignupPage() {
           {error ? <FormAlert variant="error">{error}</FormAlert> : null}
           {success ? <FormAlert variant="success">{success}</FormAlert> : null}
 
-          <Button type="submit" isLoading={isSubmitting} disabled={supabaseUnavailable}>
-            Criar conta
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              type="submit"
+              isLoading={isSubmitting}
+              disabled={supabaseUnavailable || cooldownSec > 0}
+            >
+              {cooldownSec > 0 ? `Espere ${cooldownSec}s` : "Criar conta"}
+            </Button>
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={!values.email || resendCooldownSec > 0}
+              className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-transparent px-4 py-2 text-sm font-semibold text-white/90 hover:bg-white/10 disabled:opacity-60"
+            >
+              {resendCooldownSec > 0
+                ? `Re-enviar confirmação (${resendCooldownSec}s)`
+                : "Re-enviar confirmação"}
+            </button>
+          </div>
         </form>
       </div>
     </AuthLayout>
