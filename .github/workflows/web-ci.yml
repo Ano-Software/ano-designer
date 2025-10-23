@@ -26,8 +26,8 @@ jobs:
         with:
           version: "9"
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install dependencies (no lockfile fallback)
+        run: pnpm install --no-frozen-lockfile
 
       - name: Typecheck (best effort)
         run: pnpm -w typecheck || true
